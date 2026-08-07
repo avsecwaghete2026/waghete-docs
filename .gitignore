@@ -4,5 +4,5 @@ node_modules/
 .env
 .env.local
 
-# Built output
+# Build-generated
 js/config.runtime.js

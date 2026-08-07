@@ -1,7 +1,7 @@
 // App shell entry: route to login if unauthenticated, otherwise render
 // the navbar (with role badge) and hand off to the search/admin modules.
 
-import { getSession, signOut, ensureRole, isAdmin } from './auth.js';
+import { getSession, signOut, ensureRole } from './auth.js';
 import { initSearch } from './search.js';
 import { initAdmin } from './admin.js';
 
@@ -16,29 +16,26 @@ const els = {
 };
 
 async function bootstrap() {
-  // Not signed in? Send to login.
+  // Not signed in (or session was unusable)? Send to login.
   const session = await getSession();
   if (!session) {
     window.location.href = './login.html';
     return;
   }
 
-  // Pull the role so the navbar + admin tab can render correctly.
-  try {
-    const profile = await ensureRole();
-    if (!profile) { window.location.href = './login.html'; return; }
-  } catch (e) {
-    console.error('Profile load failed:', e);
-    alert('Could not load profile.');
-    await signOut();
+  // Pull the role. ensureRole() clears the session and returns null if
+  // the profile row is missing — which means the JWT refers to a user
+  // whose profile we couldn't read.
+  const profile = await ensureRole();
+  if (!profile) {
     window.location.href = './login.html';
     return;
   }
 
   // Render navbar.
-  els.email.textContent = window.__sessionEmail__;
-  els.role.textContent = window.__sessionRole__;
-  els.role.classList.add(window.__sessionRole__);
+  els.email.textContent = profile.email;
+  els.role.textContent = profile.role;
+  els.role.classList.add(profile.role);
 
   // Wire up tabs.
   for (const tab of els.tabs.querySelectorAll('.tab')) {
@@ -51,7 +48,7 @@ async function bootstrap() {
   });
 
   // Show admin tab only for admins.
-  if (isAdmin()) {
+  if (profile.role === 'admin') {
     els.adminTab.hidden = false;
     await initAdmin();
   }
