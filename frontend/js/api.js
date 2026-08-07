@@ -27,6 +27,12 @@ export async function searchDocuments({
   dateTo = '',
   signal,
 } = {}) {
+  const qTrim = q.trim();
+
+  // When there's a text query, fetch more rows and filter client-side
+  // across title + category + tags + uploader (PostgREST .or() can't
+  // reach joined/nested columns). Keep server-side filters for perf.
+  const fetchMore = !!qTrim;
   let query = supabase
     .from('documents')
     .select(
@@ -34,25 +40,20 @@ export async function searchDocuments({
       'categories(name), profiles!documents_uploaded_by_fkey(email)',
     )
     .order('upload_date', { ascending: false })
-    .limit(100);
+    .limit(fetchMore ? 300 : 100);
 
-  if (q.trim()) {
-    const q_ = q.trim();
-    // Case-insensitive OR across title, category, tags, and uploader email.
-    query = query.or(
-      `title.ilike.%${q_}%,categories.name.ilike.%${q_}%,tags.ilike.%${q_}%,profiles.email.ilike.%${q_}%`,
-    );
-  }
   if (categoryId) query = query.eq('category_id', categoryId);
   if (dateFrom) query = query.gte('upload_date', dateFrom);
   if (dateTo) query = query.lte('upload_date', `${dateTo}T23:59:59.999Z`);
   for (const tag of tags) {
     query = query.contains('tags', [tag]);
   }
-  if (signal) query = query.abortSignal(signal);
+  if (signal && !fetchMore) query = query.abortSignal(signal);
 
-  const { data, error } = await query;
-  if (error) {
+  let data;
+  try {
+    ({ data } = await query);
+  } catch (error) {
     if (error.name === 'AbortError' || /abort/i.test(error.message)) {
       const e = new Error('aborted');
       e.code = 'aborted';
@@ -60,6 +61,22 @@ export async function searchDocuments({
     }
     throw error;
   }
+  if (signal?.aborted) {
+    const e = new Error('aborted');
+    e.code = 'aborted';
+    throw e;
+  }
+
+  if (fetchMore) {
+    const q_ = qTrim.toLowerCase();
+    return (data ?? []).filter((r) =>
+      r.title?.toLowerCase().includes(q_) ||
+      r.categories?.name?.toLowerCase().includes(q_) ||
+      (r.tags ?? []).some((t) => t.toLowerCase().includes(q_)) ||
+      r.profiles?.email?.toLowerCase().includes(q_)
+    ).slice(0, 100);
+  }
+
   return data ?? [];
 }
 
