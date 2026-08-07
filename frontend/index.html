@@ -108,7 +108,20 @@
           <label>Title<input type="text" id="edit-title" required /></label>
 
           <label>Category
-            <select id="edit-category" required><option value="">—</option></select>
+            <div class="cat-selector" id="edit-cat-selector">
+              <button type="button" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="cat-trigger-label">—</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="cat-dropdown" role="listbox" hidden>
+                <div class="cat-options"></div>
+                <div class="cat-add-row">
+                  <button type="button" class="cat-add-btn">+ New category</button>
+                  <input type="text" class="cat-add-input" placeholder="Category name" hidden />
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="edit-category" value="" />
           </label>
 
           <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
@@ -135,22 +148,25 @@
             <label>File<input type="file" id="upload-file" required /></label>
             <label>Title<input type="text" id="upload-title" required /></label>
             <label>Category
-              <select id="upload-category" required><option value="">—</option></select>
+              <div class="cat-selector" id="upload-cat-selector">
+                <button type="button" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="cat-trigger-label">—</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="cat-dropdown" role="listbox" hidden>
+                  <div class="cat-options"></div>
+                  <div class="cat-add-row">
+                    <button type="button" class="cat-add-btn">+ New category</button>
+                    <input type="text" class="cat-add-input" placeholder="Category name" hidden />
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="upload-category" value="" />
             </label>
             <label>Tags (comma-separated)<input type="text" id="upload-tags" /></label>
             <button type="submit">Upload</button>
             <p id="upload-error" class="error" hidden></p>
           </form>
-        </div>
-
-        <div class="admin-card">
-          <h2>Categories</h2>
-          <form id="category-form" class="inline-form">
-            <input type="text" id="category-name" placeholder="New category name" required />
-            <button type="submit">Add</button>
-            <p id="category-error" class="error" hidden></p>
-          </form>
-          <ul id="category-list"></ul>
         </div>
 
         <div class="admin-card">

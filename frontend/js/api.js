@@ -233,6 +233,14 @@ export async function createCategory(name) {
   return data;
 }
 
+export async function deleteCategory(id) {
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ============================================================
 // profiles (admin only)
 // ============================================================

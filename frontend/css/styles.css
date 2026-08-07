@@ -403,6 +403,101 @@ main { padding: 1.75rem 1.5rem 3rem; max-width: 1200px; margin: 0 auto; }
 }
 
 /* =====================================================================
+   Category selector (inline dropdown in upload/edit forms)
+   ===================================================================== */
+.cat-selector {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+.cat-trigger {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cat-trigger:focus {
+  outline: none;
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--c-primary-ring);
+}
+.cat-trigger-label { color: var(--c-text-muted); }
+.cat-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  overflow: hidden;
+  animation: fadeIn 0.1s ease-out;
+}
+.cat-options { max-height: 220px; overflow-y: auto; }
+.cat-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+  gap: 0.5rem;
+}
+.cat-option:hover { background: var(--c-surface-alt); }
+.cat-option .cat-del-btn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--c-text-muted);
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.1s, background 0.1s;
+}
+.cat-option .cat-del-btn:hover { color: var(--c-danger-fg); background: var(--c-danger-bg); }
+.cat-add-row {
+  border-top: 1px solid var(--c-border-soft);
+  padding: 0.5rem;
+}
+.cat-add-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--c-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s;
+}
+.cat-add-btn:hover { background: var(--c-primary-soft); }
+.cat-add-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 13px;
+  box-shadow: 0 0 0 3px var(--c-primary-ring);
+}
+
+/* =====================================================================
    Admin grid — 2 columns of cards
    ===================================================================== */
 .admin-grid {
@@ -425,48 +520,8 @@ main { padding: 1.75rem 1.5rem 3rem; max-width: 1200px; margin: 0 auto; }
   border-bottom: 1px solid var(--c-border-soft);
   color: var(--c-text);
 }
-.admin-card #upload-form {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  box-shadow: none;
-  max-width: none;
-}
-.admin-card #upload-form button { margin-top: 1rem; }
-.admin-card .inline-form { margin-bottom: 0.75rem; }
-.admin-card .results { margin-top: 0.75rem; }
-
 @media (max-width: 700px) {
   .admin-grid { grid-template-columns: 1fr; }
-}
-
-/* =====================================================================
-   Category list tags
-   ===================================================================== */
-#category-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.6rem 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-#category-list li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--c-text);
-}
-#category-list li.muted {
-  background: transparent;
-  border: 1px dashed var(--c-border);
-  color: var(--c-text-muted);
 }
 
 /* =====================================================================

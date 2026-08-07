@@ -6,6 +6,7 @@ import {
   updateDocument,
   listCategories,
   createCategory,
+  deleteCategory,
   listUsers,
   createUserViaEdgeFn,
   parseTags,
@@ -16,15 +17,14 @@ import { supabase, MAX_FILE_BYTES, ALLOWED_MIME } from './supabaseClient.js';
 const els = {};
 
 export async function initAdmin() {
-  // isAdmin() is checked by app.js before calling us; double-check here
-  // so this module is safe to import unconditionally.
   if (window.__sessionRole__ !== 'admin') return;
 
   Object.assign(els, {
     uploadForm:    document.getElementById('upload-form'),
     uploadFile:    document.getElementById('upload-file'),
     uploadTitle:   document.getElementById('upload-title'),
-    uploadCategory:document.getElementById('upload-category'),
+    uploadCatSel:  document.getElementById('upload-cat-selector'),
+    uploadCatHidden: document.getElementById('upload-category'),
     uploadTags:    document.getElementById('upload-tags'),
     uploadError:   document.getElementById('upload-error'),
 
@@ -33,15 +33,11 @@ export async function initAdmin() {
     editForm:      document.getElementById('edit-form'),
     editId:        document.getElementById('edit-id'),
     editTitle:     document.getElementById('edit-title'),
-    editCategory:  document.getElementById('edit-category'),
+    editCatSel:    document.getElementById('edit-cat-selector'),
+    editCatHidden: document.getElementById('edit-category'),
     editTags:      document.getElementById('edit-tags'),
     editFile:      document.getElementById('edit-file'),
     editError:     document.getElementById('edit-error'),
-
-    categoryForm:  document.getElementById('category-form'),
-    categoryName:  document.getElementById('category-name'),
-    categoryList:  document.getElementById('category-list'),
-    categoryError: document.getElementById('category-error'),
 
     userForm:      document.getElementById('user-form'),
     userEmail:     document.getElementById('user-email-input'),
@@ -51,30 +47,159 @@ export async function initAdmin() {
     usersBody:     document.getElementById('users-body'),
   });
 
-  // Close interactions for the edit modal: backdrop, X, Cancel button,
-  // Escape key (the detail modal also listens for Escape; we coordinate
-  // by closing only the topmost open modal).
+  // Edit modal close interactions.
   els.editModal.addEventListener('click', (ev) => {
     if (ev.target.dataset.close !== undefined) closeEditModal();
   });
   document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape') return;
-    if (!els.editModal.hidden) closeEditModal();
+    if (ev.key === 'Escape' && !els.editModal.hidden) closeEditModal();
   });
 
-  await populateCategoryDropdowns();
-  await renderCategoryList();
+  // Build custom category selectors for both upload and edit forms.
+  initCatSelector(els.uploadCatSel, els.uploadCatHidden);
+  initCatSelector(els.editCatSel, els.editCatHidden);
+
   await renderUserList();
 
   els.uploadForm.addEventListener('submit', onUpload);
   els.editForm.addEventListener('submit', onEdit);
-  els.categoryForm.addEventListener('submit', onAddCategory);
   els.userForm.addEventListener('submit', onCreateUser);
 
-  // Listen for "open edit" events from the detail modal.
   window.addEventListener('docsearch:edit', (ev) => {
     openEditModal(ev.detail?.id);
   });
+}
+
+// ============================================================
+// Custom category selector
+// ============================================================
+
+function initCatSelector(selector, hiddenInput) {
+  const trigger = selector.querySelector('.cat-trigger');
+  const dropdown = selector.querySelector('.cat-dropdown');
+  const options  = selector.querySelector('.cat-options');
+  const addBtn   = selector.querySelector('.cat-add-btn');
+  const addInput = selector.querySelector('.cat-add-input');
+  const label    = selector.querySelector('.cat-trigger-label');
+
+  // Toggle dropdown.
+  trigger.addEventListener('click', async (ev) => {
+    ev.stopPropagation();
+    const isOpen = !dropdown.hidden;
+    closeAllDropdowns();
+    if (!isOpen) {
+      dropdown.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+      await refreshCatOptions();
+    }
+  });
+
+  // Select a category.
+  options.addEventListener('click', (ev) => {
+    const opt = ev.target.closest('[data-cat-id]');
+    if (!opt) return;
+    const id = opt.dataset.catId;
+    const name = opt.dataset.catName;
+    hiddenInput.value = id;
+    label.textContent = name || '—';
+    closeAllDropdowns();
+  });
+
+  // Delete a category.
+  options.addEventListener('click', async (ev) => {
+    const delBtn = ev.target.closest('[data-delete-cat]');
+    if (!delBtn) return;
+    ev.stopPropagation();
+    const id = delBtn.dataset.deleteCat;
+    const name = delBtn.closest('[data-cat-id]')?.dataset.catName || '';
+    if (!confirm(`Delete category "${name}"? Documents using it will become uncategorized.`)) return;
+    try {
+      await deleteCategory(id);
+      await refreshCatOptions();
+      // Clear the hidden input if the deleted category was selected.
+      if (hiddenInput.value === id) {
+        hiddenInput.value = '';
+        label.textContent = '—';
+      }
+      window.dispatchEvent(new CustomEvent('docsearch:refresh'));
+    } catch (e) {
+      alert(`Delete failed: ${e.message}`);
+    }
+  });
+
+  // Add new category.
+  addBtn.addEventListener('click', () => {
+    addBtn.hidden = true;
+    addInput.hidden = false;
+    addInput.value = '';
+    addInput.focus();
+  });
+
+  addInput.addEventListener('keydown', async (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      await commitNewCategory();
+    }
+    if (ev.key === 'Escape') {
+      cancelAddCategory();
+    }
+  });
+  addInput.addEventListener('blur', async () => {
+    // Small delay so click events on options can fire first.
+    await new Promise((r) => setTimeout(r, 150));
+    if (!addInput.hidden && addInput.value.trim()) {
+      await commitNewCategory();
+    } else {
+      cancelAddCategory();
+    }
+  });
+
+  async function commitNewCategory() {
+    const name = addInput.value.trim();
+    if (!name) { cancelAddCategory(); return; }
+    try {
+      const cat = await createCategory(name);
+      hiddenInput.value = cat.id;
+      label.textContent = cat.name;
+      await refreshCatOptions();
+      closeAllDropdowns();
+    } catch (e) {
+      alert(`Failed to create category: ${e.message}`);
+    }
+  }
+
+  function cancelAddCategory() {
+    addInput.hidden = true;
+    addInput.value = '';
+    addBtn.hidden = false;
+  }
+
+  async function refreshCatOptions() {
+    const cats = await listCategories();
+    const selectedId = hiddenInput.value;
+
+    options.innerHTML = cats.length
+      ? cats.map((c) => `
+          <div class="cat-option" data-cat-id="${escAttr(c.id)}" data-cat-name="${escAttr(c.name)}" role="option" tabindex="-1">
+            <span>${escHtml(c.name)}</span>
+            <button type="button" class="cat-del-btn" data-delete-cat="${escAttr(c.id)}" title="Delete category" tabindex="-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        `).join('')
+      : '<div class="cat-option muted" style="padding:0.5rem 0.75rem;font-size:12px">No categories yet.</div>';
+  }
+
+  // Close dropdown when clicking outside.
+  document.addEventListener('click', (ev) => {
+    if (!selector.contains(ev.target)) closeAllDropdowns();
+  });
+
+  function closeAllDropdowns() {
+    dropdown.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    cancelAddCategory();
+  }
 }
 
 // ============================================================
@@ -91,16 +216,21 @@ async function openEditModal(id) {
       .single();
     if (error) throw error;
 
-    // Make sure the dropdown reflects current categories (an admin may
-    // have added categories since the page loaded).
-    await populateCategoryDropdowns();
-
     els.editId.value       = data.id;
     els.editTitle.value    = data.title;
-    els.editCategory.value = data.category_id ?? '';
+    els.editCatHidden.value = data.category_id ?? '';
     els.editTags.value     = (data.tags ?? []).join(', ');
     els.editFile.value     = '';
     showError(els.editError, '');
+
+    // Sync trigger label.
+    if (data.category_id) {
+      const cats = await listCategories();
+      const cat = cats.find((c) => c.id === data.category_id);
+      els.editCatSel.querySelector('.cat-trigger-label').textContent = cat?.name ?? '—';
+    } else {
+      els.editCatSel.querySelector('.cat-trigger-label').textContent = '—';
+    }
 
     els.editModal.hidden = false;
     els.editModal.setAttribute('aria-hidden', 'false');
@@ -127,7 +257,7 @@ async function onUpload(ev) {
 
   const file = els.uploadFile.files[0];
   const title = els.uploadTitle.value.trim();
-  const categoryId = els.uploadCategory.value;
+  const categoryId = els.uploadCatHidden.value;
   const tags = parseTags(els.uploadTags.value);
 
   if (!file) return showError(els.uploadError, 'Choose a file.');
@@ -145,9 +275,9 @@ async function onUpload(ev) {
   submit.textContent = 'Uploading…';
   try {
     const session = await getSession();
-    const uploaderId = session.user.id;
-    await uploadDocument({ file, title, categoryId, tags, uploaderId });
+    await uploadDocument({ file, title, categoryId: categoryId || null, tags, uploaderId: session.user.id });
     els.uploadForm.reset();
+    els.uploadCatSel.querySelector('.cat-trigger-label').textContent = '—';
     window.dispatchEvent(new CustomEvent('docsearch:refresh'));
   } catch (e) {
     showError(els.uploadError, e.message);
@@ -167,7 +297,7 @@ async function onEdit(ev) {
 
   const id = els.editId.value;
   const title = els.editTitle.value.trim();
-  const categoryId = els.editCategory.value;
+  const categoryId = els.editCatHidden.value;
   const tags = parseTags(els.editTags.value);
   const file = els.editFile.files[0] || null;
 
@@ -186,7 +316,7 @@ async function onEdit(ev) {
   try {
     const session = await getSession();
     await updateDocument({
-      id, title, categoryId, tags, file,
+      id, title, categoryId: categoryId || null, tags, file,
       uploaderId: session.user.id,
     });
     closeEditModal();
@@ -200,47 +330,6 @@ async function onEdit(ev) {
 }
 
 // ============================================================
-// Categories
-// ============================================================
-
-async function populateCategoryDropdowns() {
-  const cats = await listCategories();
-  for (const sel of [els.uploadCategory, els.editCategory]) {
-    // Keep the first "—" option, drop any others.
-    while (sel.options.length > 1) sel.remove(1);
-    for (const c of cats) {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.name;
-      sel.appendChild(opt);
-    }
-  }
-}
-
-async function renderCategoryList() {
-  const cats = await listCategories();
-  els.categoryList.innerHTML = cats.length
-    ? cats.map((c) => `<li>${escapeHtml(c.name)}</li>`).join('')
-    : '<li class="muted">No categories yet.</li>';
-}
-
-async function onAddCategory(ev) {
-  ev.preventDefault();
-  showError(els.categoryError, '');
-  const name = els.categoryName.value.trim();
-  if (!name) return;
-  try {
-    await createCategory(name);
-    els.categoryForm.reset();
-    await populateCategoryDropdowns();
-    await renderCategoryList();
-    window.dispatchEvent(new CustomEvent('docsearch:refresh'));
-  } catch (e) {
-    showError(els.categoryError, e.message);
-  }
-}
-
-// ============================================================
 // Users
 // ============================================================
 
@@ -249,13 +338,13 @@ async function renderUserList() {
     const users = await listUsers();
     els.usersBody.innerHTML = users.map((u) => `
       <tr>
-        <td class="title-cell">${escapeHtml(u.email)}</td>
+        <td class="title-cell">${escHtml(u.email)}</td>
         <td><span class="badge ${u.role}">${u.role}</span></td>
         <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</td>
       </tr>
     `).join('');
   } catch (e) {
-    els.usersBody.innerHTML = `<tr><td colspan="3"><div class="empty-state error">${escapeHtml(e.message)}</div></td></tr>`;
+    els.usersBody.innerHTML = `<tr><td colspan="3"><div class="empty-state error">${escHtml(e.message)}</div></td></tr>`;
   }
 }
 
@@ -291,8 +380,12 @@ function showError(el, msg) {
   el.textContent = msg;
 }
 
-function escapeHtml(s) {
+function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
+}
+
+function escAttr(s) {
+  return String(s ?? '').replace(/"/g, '&quot;');
 }
