@@ -9,7 +9,9 @@
 </head>
 <body>
   <header class="navbar">
-    <div class="navbar-brand">Document Search</div>
+    <div class="navbar-brand">
+      <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
+    </div>
     <nav class="navbar-tabs" id="tabs">
       <button type="button" class="tab active" data-view="search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -21,6 +23,7 @@
       </button>
     </nav>
     <div class="navbar-user">
+      <img class="user-avatar" id="user-avatar" src="" alt="" hidden />
       <span id="user-email" class="muted"></span>
       <span id="user-role" class="badge"></span>
       <button id="logout-btn" type="button">Sign out</button>
@@ -143,7 +146,10 @@
     <section id="view-admin" class="view">
       <div class="admin-grid">
         <div class="admin-card">
-          <h2>Upload document</h2>
+          <h2>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload document
+          </h2>
           <form id="upload-form">
             <label>File<input type="file" id="upload-file" required /></label>
             <label>Title<input type="text" id="upload-title" required /></label>
@@ -170,7 +176,10 @@
         </div>
 
         <div class="admin-card">
-          <h2>Users</h2>
+          <h2>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Users
+          </h2>
           <form id="user-form">
             <label>Email<input type="email" id="user-email-input" required /></label>
             <label>Temp password (min 8 chars)<input type="text" id="user-password" required minlength="8" /></label>

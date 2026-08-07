@@ -7,10 +7,11 @@ import { initAdmin } from './admin.js';
 import { initDetail } from './detail.js';
 
 const els = {
-  email: document.getElementById('user-email'),
-  role:  document.getElementById('user-role'),
-  logout: document.getElementById('logout-btn'),
-  tabs:   document.getElementById('tabs'),
+  email:   document.getElementById('user-email'),
+  avatar:  document.getElementById('user-avatar'),
+  role:    document.getElementById('user-role'),
+  logout:  document.getElementById('logout-btn'),
+  tabs:    document.getElementById('tabs'),
   adminTab: document.getElementById('admin-tab'),
   searchView: document.getElementById('view-search'),
   adminView:  document.getElementById('view-admin'),
@@ -37,6 +38,7 @@ async function bootstrap() {
   els.email.textContent = profile.email;
   els.role.textContent = profile.role;
   els.role.classList.add(profile.role);
+  renderAvatar(els.avatar, profile.email);
 
   // Wire up tabs.
   for (const tab of els.tabs.querySelectorAll('.tab')) {
@@ -69,6 +71,22 @@ function switchTab(view) {
   }
   els.searchView.classList.toggle('active', view === 'search');
   els.adminView.classList.toggle('active', view === 'admin');
+}
+
+function renderAvatar(img, email) {
+  // Generate a consistent color avatar from the email hash.
+  const hue = [...email].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) & 0xffff, 0);
+  const bg = `hsl(${hue % 360}, 45%, 55%)`;
+  const initials = email.split('@')[0].slice(0, 2).toUpperCase();
+  const size = 64;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+    `<rect width="${size}" height="${size}" fill="${bg}" rx="32"/>` +
+    `<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" ` +
+    `fill="#fff" font-family="system-ui,sans-serif" font-size="22" font-weight="700">${initials}</text>` +
+    `</svg>`;
+  img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  img.alt = initials;
+  img.hidden = false;
 }
 
 bootstrap();
