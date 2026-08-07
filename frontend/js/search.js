@@ -148,6 +148,9 @@ function openDetail(id) {
 
 async function downloadRow(id) {
   try {
+    const btn = document.activeElement;
+    const origText = btn?.textContent;
+    if (btn?.tagName === 'BUTTON') { btn.disabled = true; btn.textContent = '…'; }
     const rowData = await lookupRow(id);
     if (!rowData) return;
     const blob = await downloadAsBlob(rowData.drive_file_id);
@@ -161,6 +164,9 @@ async function downloadRow(id) {
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (e) {
     alert(`Download failed: ${e.message}`);
+  } finally {
+    const btns = document.querySelectorAll('[data-action="download"]');
+    btns.forEach(b => { b.disabled = false; b.textContent = 'Download'; });
   }
 }
 

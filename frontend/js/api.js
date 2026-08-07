@@ -36,7 +36,13 @@ export async function searchDocuments({
     .order('upload_date', { ascending: false })
     .limit(100);
 
-  if (q.trim()) query = query.textSearch('search_vector', q.trim(), { type: 'websearch' });
+  if (q.trim()) {
+    const q_ = q.trim();
+    // Case-insensitive OR across title, category, tags, and uploader email.
+    query = query.or(
+      `title.ilike.%${q_}%,categories.name.ilike.%${q_}%,tags.ilike.%${q_}%,profiles.email.ilike.%${q_}%`,
+    );
+  }
   if (categoryId) query = query.eq('category_id', categoryId);
   if (dateFrom) query = query.gte('upload_date', dateFrom);
   if (dateTo) query = query.lte('upload_date', `${dateTo}T23:59:59.999Z`);

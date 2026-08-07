@@ -7,7 +7,7 @@
 // itself. Drive's URL is never exposed.
 
 import { downloadFromDrive } from '../_shared/google.ts';
-import { authenticate, json, preflight } from '../_shared/auth.ts';
+import { authenticate, preflight } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -53,9 +53,20 @@ Deno.serve(async (req) => {
     return json({ error: 'drive_download_failed', detail: String(e) }, 502, origin);
   }
 
+  const origin = req.headers.get('Origin');
+  const allowOrigin = (() => {
+    if (!origin) return 'https://waghete-docs.pages.dev';
+    if (origin.endsWith('.pages.dev')) return origin;
+    if (origin === 'https://waghete-docs.pages.dev') return origin;
+    return 'https://waghete-docs.pages.dev';
+  })();
+
   const headers: HeadersInit = {
     'Content-Type': driveRes.contentType,
     'Cache-Control': 'private, max-age=300',
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
     ...(driveRes.contentLength ? { 'Content-Length': driveRes.contentLength } : {}),
   };
 

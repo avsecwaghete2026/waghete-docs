@@ -178,13 +178,14 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
 .inline-form input { flex: 1; }
 
 /* =====================================================================
-   Navbar
+   Navbar (brand + tabs + user on one line)
    ===================================================================== */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.85rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  gap: 1rem;
   background: var(--c-surface);
   border-bottom: 1px solid var(--c-border);
   position: sticky;
@@ -199,6 +200,8 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .navbar-brand::before {
   content: '';
@@ -208,10 +211,17 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
 }
+.navbar-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+  justify-content: center;
+}
 .navbar-user {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 .navbar-user #user-email {
   font-size: 13px;
@@ -231,31 +241,29 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
 .navbar-user button:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
 
 /* =====================================================================
-   Tabs
+   Tabs (inside navbar)
    ===================================================================== */
-.tabs {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0 1.5rem;
-  border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
-}
 .tab {
   border: 0;
   background: transparent;
-  padding: 0.85rem 1rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   color: var(--c-text-muted);
   font-weight: 500;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s, border-color 0.15s;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s, background 0.15s;
 }
-.tab:hover { color: var(--c-text); }
+.tab svg { flex-shrink: 0; opacity: 0.7; }
+.tab:hover { color: var(--c-text); background: var(--c-surface-alt); }
 .tab.active {
   color: var(--c-primary);
-  border-bottom-color: var(--c-primary);
+  background: var(--c-primary-soft);
 }
+.tab.active svg { opacity: 1; }
 
 main { padding: 1.75rem 1.5rem 3rem; max-width: 1200px; margin: 0 auto; }
 .view { display: none; }
@@ -395,16 +403,46 @@ main { padding: 1.75rem 1.5rem 3rem; max-width: 1200px; margin: 0 auto; }
 }
 
 /* =====================================================================
-   Admin sections
+   Admin grid — 2 columns of cards
    ===================================================================== */
-section h2 {
-  font-size: 1rem;
-  margin: 2rem 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--c-border);
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.admin-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.admin-card h2 {
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--c-border-soft);
   color: var(--c-text);
 }
+.admin-card #upload-form {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: none;
+}
+.admin-card #upload-form button { margin-top: 1rem; }
+.admin-card .inline-form { margin-bottom: 0.75rem; }
+.admin-card .results { margin-top: 0.75rem; }
 
+@media (max-width: 700px) {
+  .admin-grid { grid-template-columns: 1fr; }
+}
+
+/* =====================================================================
+   Category list tags
+   ===================================================================== */
 #category-list {
   list-style: none;
   padding: 0;
@@ -429,40 +467,6 @@ section h2 {
   background: transparent;
   border: 1px dashed var(--c-border);
   color: var(--c-text-muted);
-}
-
-/* Form cards on the admin page — wrap each <form> in a card-like surface */
-#upload-form, #edit-form, #category-form, #user-form {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border-soft);
-  border-radius: var(--radius-md);
-  padding: 1.25rem 1.25rem 0.5rem;
-  box-shadow: var(--shadow-sm);
-  max-width: 640px;
-}
-#category-form {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
-  padding: 1rem;
-}
-#category-form label {
-  flex: 1;
-  margin-top: 0;
-}
-#category-form button { margin-top: 0.6rem; flex-shrink: 0; }
-
-/* Inline cancel button on the edit form */
-#edit-cancel {
-  background: transparent;
-  color: var(--c-text-muted);
-  box-shadow: none;
-  margin-left: 0.5rem;
-}
-#edit-cancel:hover {
-  background: var(--c-surface-alt);
-  color: var(--c-text);
-  box-shadow: none;
 }
 
 /* =====================================================================

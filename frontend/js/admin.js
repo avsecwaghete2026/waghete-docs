@@ -140,7 +140,9 @@ async function onUpload(ev) {
   }
 
   const submit = els.uploadForm.querySelector('button[type=submit]');
+  const origText = submit.textContent;
   submit.disabled = true;
+  submit.textContent = 'Uploading…';
   try {
     const session = await getSession();
     const uploaderId = session.user.id;
@@ -151,6 +153,7 @@ async function onUpload(ev) {
     showError(els.uploadError, e.message);
   } finally {
     submit.disabled = false;
+    submit.textContent = origText;
   }
 }
 
@@ -177,7 +180,9 @@ async function onEdit(ev) {
   }
 
   const submit = els.editForm.querySelector('button[type=submit]');
+  const origText = submit.textContent;
   submit.disabled = true;
+  submit.textContent = 'Saving…';
   try {
     const session = await getSession();
     await updateDocument({
@@ -190,6 +195,7 @@ async function onEdit(ev) {
     showError(els.editError, e.message);
   } finally {
     submit.disabled = false;
+    submit.textContent = origText;
   }
 }
 
