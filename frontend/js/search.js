@@ -109,7 +109,7 @@ function renderResults(rows) {
   const admin = isAdmin();
   els.body.innerHTML = rows.map((r) => `
     <tr data-id="${r.id}">
-      <td class="title-cell">${escapeHtml(r.title)}</td>
+      <td class="title-cell"><a href="#" class="title-link" data-action="open">${escapeHtml(r.title)}</a></td>
       <td>${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
       <td>${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
       <td>${formatDate(r.upload_date)}</td>
@@ -139,9 +139,14 @@ async function onRowClick(ev) {
   if (!id) return;
 
   const action = btn.dataset.action;
-  if (action === 'download') return downloadRow(id);
-  if (action === 'edit')    return dispatchEdit(id);
-  if (action === 'delete')  return deleteRow(id, tr, btn);
+  if (action === 'open')      return openDetail(id);
+  if (action === 'download')  return downloadRow(id);
+  if (action === 'edit')      return dispatchEdit(id);
+  if (action === 'delete')    return deleteRow(id, tr, btn);
+}
+
+function openDetail(id) {
+  window.dispatchEvent(new CustomEvent('docsearch:open', { detail: { id } }));
 }
 
 async function downloadRow(id) {

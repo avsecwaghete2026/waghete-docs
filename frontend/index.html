@@ -58,6 +58,68 @@
     </section>
 
     <!-- ============================================================
+         DETAIL MODAL (overlay; opens when a row is clicked)
+         ============================================================ -->
+    <div id="detail-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-panel">
+        <button type="button" class="modal-close" data-close aria-label="Close">×</button>
+        <aside class="detail-sidebar">
+          <div class="detail-sidebar-inner">
+            <h2 id="detail-title" class="detail-title">—</h2>
+            <dl class="detail-meta">
+              <dt>Category</dt>     <dd id="detail-category">—</dd>
+              <dt>Tags</dt>         <dd id="detail-tags">—</dd>
+              <dt>Uploaded</dt>     <dd id="detail-uploaded">—</dd>
+              <dt>By</dt>           <dd id="detail-uploader">—</dd>
+              <dt>Type</dt>         <dd id="detail-type">—</dd>
+              <dt>Size</dt>         <dd id="detail-size">—</dd>
+            </dl>
+            <div class="detail-actions">
+              <button type="button" id="detail-download" class="icon-btn primary">Download</button>
+              <button type="button" id="detail-edit" class="icon-btn" hidden>Edit</button>
+              <button type="button" id="detail-delete" class="icon-btn danger" hidden>Delete</button>
+            </div>
+          </div>
+        </aside>
+        <section class="detail-preview">
+          <div id="detail-preview-host" class="preview-host"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         EDIT MODAL (overlay; pre-filled when opened from detail)
+         ============================================================ -->
+    <div id="edit-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-panel modal-panel-edit">
+        <button type="button" class="modal-close" data-close aria-label="Close">×</button>
+        <h2 class="edit-modal-title">Edit document</h2>
+
+        <form id="edit-form">
+          <input type="hidden" id="edit-id" />
+
+          <label>Title<input type="text" id="edit-title" required /></label>
+
+          <label>Category
+            <select id="edit-category" required><option value="">—</option></select>
+          </label>
+
+          <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
+
+          <label>Replace file (optional)<input type="file" id="edit-file" /></label>
+
+          <div class="edit-modal-actions">
+            <button type="submit" class="icon-btn primary">Save changes</button>
+            <button type="button" class="icon-btn" data-close>Cancel</button>
+            <p id="edit-error" class="error" hidden></p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================================
          ADMIN VIEW (rendered only when role === 'admin')
          ============================================================ -->
     <section id="view-admin" class="view">
@@ -74,18 +136,7 @@
       </form>
 
       <h2>Edit / replace</h2>
-      <form id="edit-form" hidden>
-        <input type="hidden" id="edit-id" />
-        <label>Title<input type="text" id="edit-title" required /></label>
-        <label>Category
-          <select id="edit-category" required><option value="">—</option></select>
-        </label>
-        <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
-        <label>Replace file (optional)<input type="file" id="edit-file" /></label>
-        <button type="submit">Save changes</button>
-        <button type="button" id="edit-cancel">Cancel</button>
-        <p id="edit-error" class="error" hidden></p>
-      </form>
+      <p class="muted">Click the <strong>Edit</strong> button on a document to open the editor.</p>
 
       <h2>Categories</h2>
       <form id="category-form" class="inline-form">

@@ -1,23 +1,24 @@
-// Admin panel: upload, edit, category management, user creation.
+// Admin panel: upload, edit (modal), category management, user creation.
 // Only initialized when the logged-in user is an admin.
 
 import {
   uploadDocument,
   updateDocument,
-  deleteDocument,
   listCategories,
   createCategory,
   listUsers,
   createUserViaEdgeFn,
   parseTags,
 } from './api.js';
-import { isAdmin, getSession } from './auth.js';
+import { getSession } from './auth.js';
 import { supabase, MAX_FILE_BYTES, ALLOWED_MIME } from './supabaseClient.js';
 
 const els = {};
 
 export async function initAdmin() {
-  if (!isAdmin()) return; // belt-and-braces — app.js already hides the tab
+  // isAdmin() is checked by app.js before calling us; double-check here
+  // so this module is safe to import unconditionally.
+  if (window.__sessionRole__ !== 'admin') return;
 
   Object.assign(els, {
     uploadForm:    document.getElementById('upload-form'),
@@ -27,6 +28,8 @@ export async function initAdmin() {
     uploadTags:    document.getElementById('upload-tags'),
     uploadError:   document.getElementById('upload-error'),
 
+    // Edit modal
+    editModal:     document.getElementById('edit-modal'),
     editForm:      document.getElementById('edit-form'),
     editId:        document.getElementById('edit-id'),
     editTitle:     document.getElementById('edit-title'),
@@ -34,7 +37,6 @@ export async function initAdmin() {
     editTags:      document.getElementById('edit-tags'),
     editFile:      document.getElementById('edit-file'),
     editError:     document.getElementById('edit-error'),
-    editCancel:    document.getElementById('edit-cancel'),
 
     categoryForm:  document.getElementById('category-form'),
     categoryName:  document.getElementById('category-name'),
@@ -49,17 +51,70 @@ export async function initAdmin() {
     usersBody:     document.getElementById('users-body'),
   });
 
+  // Close interactions for the edit modal: backdrop, X, Cancel button,
+  // Escape key (the detail modal also listens for Escape; we coordinate
+  // by closing only the topmost open modal).
+  els.editModal.addEventListener('click', (ev) => {
+    if (ev.target.dataset.close !== undefined) closeEditModal();
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (!els.editModal.hidden) closeEditModal();
+  });
+
   await populateCategoryDropdowns();
   await renderCategoryList();
   await renderUserList();
 
   els.uploadForm.addEventListener('submit', onUpload);
   els.editForm.addEventListener('submit', onEdit);
-  els.editCancel.addEventListener('click', cancelEdit);
   els.categoryForm.addEventListener('submit', onAddCategory);
   els.userForm.addEventListener('submit', onCreateUser);
 
-  window.addEventListener('docsearch:edit', onEditFromSearch);
+  // Listen for "open edit" events from the detail modal.
+  window.addEventListener('docsearch:edit', (ev) => {
+    openEditModal(ev.detail?.id);
+  });
+}
+
+// ============================================================
+// Edit modal open/close
+// ============================================================
+
+async function openEditModal(id) {
+  if (!id) return;
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('id, title, category_id, tags')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+
+    // Make sure the dropdown reflects current categories (an admin may
+    // have added categories since the page loaded).
+    await populateCategoryDropdowns();
+
+    els.editId.value       = data.id;
+    els.editTitle.value    = data.title;
+    els.editCategory.value = data.category_id ?? '';
+    els.editTags.value     = (data.tags ?? []).join(', ');
+    els.editFile.value     = '';
+    showError(els.editError, '');
+
+    els.editModal.hidden = false;
+    els.editModal.setAttribute('aria-hidden', 'false');
+    els.editTitle.focus();
+  } catch (e) {
+    alert(`Could not load document: ${e.message}`);
+  }
+}
+
+function closeEditModal() {
+  els.editModal.hidden = true;
+  els.editModal.setAttribute('aria-hidden', 'true');
+  els.editForm.reset();
+  showError(els.editError, '');
 }
 
 // ============================================================
@@ -87,7 +142,7 @@ async function onUpload(ev) {
   const submit = els.uploadForm.querySelector('button[type=submit]');
   submit.disabled = true;
   try {
-    const session = (await getSession());
+    const session = await getSession();
     const uploaderId = session.user.id;
     await uploadDocument({ file, title, categoryId, tags, uploaderId });
     els.uploadForm.reset();
@@ -100,32 +155,8 @@ async function onUpload(ev) {
 }
 
 // ============================================================
-// Edit
+// Edit submit
 // ============================================================
-
-async function onEditFromSearch(ev) {
-  const id = ev.detail?.id;
-  if (!id) return;
-
-  try {
-    const { data, error } = await supabase
-      .from('documents')
-      .select('id, title, category_id, tags')
-      .eq('id', id)
-      .single();
-    if (error) throw error;
-
-    els.editId.value = data.id;
-    els.editTitle.value = data.title;
-    els.editCategory.value = data.category_id ?? '';
-    els.editTags.value = (data.tags ?? []).join(', ');
-    els.editFile.value = '';
-    els.editForm.hidden = false;
-    els.editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (e) {
-    alert(`Could not load document: ${e.message}`);
-  }
-}
 
 async function onEdit(ev) {
   ev.preventDefault();
@@ -137,6 +168,7 @@ async function onEdit(ev) {
   const tags = parseTags(els.editTags.value);
   const file = els.editFile.files[0] || null;
 
+  if (!title) return showError(els.editError, 'Title is required.');
   if (file && file.size > MAX_FILE_BYTES) {
     return showError(els.editError, 'Replacement file too large.');
   }
@@ -147,23 +179,18 @@ async function onEdit(ev) {
   const submit = els.editForm.querySelector('button[type=submit]');
   submit.disabled = true;
   try {
-    const session = (await getSession());
+    const session = await getSession();
     await updateDocument({
       id, title, categoryId, tags, file,
       uploaderId: session.user.id,
     });
-    cancelEdit();
+    closeEditModal();
     window.dispatchEvent(new CustomEvent('docsearch:refresh'));
   } catch (e) {
     showError(els.editError, e.message);
   } finally {
     submit.disabled = false;
   }
-}
-
-function cancelEdit() {
-  els.editForm.hidden = true;
-  els.editForm.reset();
 }
 
 // ============================================================
@@ -187,7 +214,7 @@ async function populateCategoryDropdowns() {
 async function renderCategoryList() {
   const cats = await listCategories();
   els.categoryList.innerHTML = cats.length
-    ? cats.map((c) => `<li><span>${escapeHtml(c.name)}</span></li>`).join('')
+    ? cats.map((c) => `<li>${escapeHtml(c.name)}</li>`).join('')
     : '<li class="muted">No categories yet.</li>';
 }
 
@@ -216,7 +243,7 @@ async function renderUserList() {
     const users = await listUsers();
     els.usersBody.innerHTML = users.map((u) => `
       <tr>
-        <td>${escapeHtml(u.email)}</td>
+        <td class="title-cell">${escapeHtml(u.email)}</td>
         <td><span class="badge ${u.role}">${u.role}</span></td>
         <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</td>
       </tr>

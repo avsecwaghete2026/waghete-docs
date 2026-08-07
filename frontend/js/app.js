@@ -4,6 +4,7 @@
 import { getSession, signOut, ensureRole } from './auth.js';
 import { initSearch } from './search.js';
 import { initAdmin } from './admin.js';
+import { initDetail } from './detail.js';
 
 const els = {
   email: document.getElementById('user-email'),
@@ -54,6 +55,7 @@ async function bootstrap() {
   }
 
   await initSearch();
+  await initDetail();
 
   // Refresh search whenever the admin does an action that mutates docs.
   window.addEventListener('docsearch:refresh', () => {
