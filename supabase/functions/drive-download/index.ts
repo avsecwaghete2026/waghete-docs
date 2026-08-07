@@ -13,6 +13,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+function json(body: unknown, status = 200, origin: string | null = null) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': origin ?? 'https://waghete-docs.pages.dev',
+      'Vary': 'Origin',
+    },
+  });
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
   if (req.method === 'OPTIONS') return preflight(origin);
@@ -46,14 +57,13 @@ Deno.serve(async (req) => {
   }
 
   // Fetch + stream.
-  let driveRes: { body: ReadableStream<Uint8Array>; contentType: string; contentLength: string | null };
+  let driveRes: { body: ReadableStream; contentType: string; contentLength: string | null };
   try {
     driveRes = await downloadFromDrive(fileId);
   } catch (e) {
     return json({ error: 'drive_download_failed', detail: String(e) }, 502, origin);
   }
 
-  const origin = req.headers.get('Origin');
   const allowOrigin = (() => {
     if (!origin) return 'https://waghete-docs.pages.dev';
     if (origin.endsWith('.pages.dev')) return origin;
