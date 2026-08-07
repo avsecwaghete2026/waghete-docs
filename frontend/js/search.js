@@ -4,12 +4,11 @@
 
 import {
   searchDocuments,
-  getSignedUrl,
   deleteDocument,
   listCategories,
   parseTags,
-  formatBytes,
   formatDate,
+  downloadAsBlob,
 } from './api.js';
 import { isAdmin, ensureRole } from './auth.js';
 
@@ -153,26 +152,25 @@ async function downloadRow(id) {
   try {
     const rowData = await lookupRow(id);
     if (!rowData) return;
-    const url = await getSignedUrl(rowData.storage_path);
-    // Trigger a download by clicking a temporary anchor.
+    const blob = await downloadAsBlob(rowData.drive_file_id);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = rowData.title;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (e) {
     alert(`Download failed: ${e.message}`);
   }
 }
 
-// We don't have rowData stored — the simplest fix is to re-fetch just
-// this row's storage_path. Tiny query, only fires on click.
 async function lookupRow(id) {
   const { supabase } = await import('./supabaseClient.js');
   const { data, error } = await supabase
     .from('documents')
-    .select('id, title, storage_path')
+    .select('id, title, drive_file_id')
     .eq('id', id)
     .single();
   if (error) { alert(`Lookup failed: ${error.message}`); return null; }
