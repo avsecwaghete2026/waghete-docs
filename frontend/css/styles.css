@@ -198,7 +198,7 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   flex-shrink: 0;
 }
 .nav-logo {
-  height: 28px;
+  height: 36px;
   width: auto;
   display: block;
 }
