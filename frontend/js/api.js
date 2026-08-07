@@ -1,5 +1,4 @@
-// Thin wrappers around the Supabase SDK + Edge Functions for the
-// actions this app uses.
+// Thin wrappers around the Supabase SDK + Edge Functions.
 //
 // File bytes live in Google Drive (NOT Supabase Storage). The Edge
 // Functions drive-upload / drive-download / drive-delete hold the
@@ -7,10 +6,17 @@
 
 import { supabase } from './supabaseClient.js';
 
-const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MiB — server-side cap too
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MiB
+
+const SUPABASE_FUNCTIONS_URL = `${window.__SUPABASE_URL__}/functions/v1`;
+
+async function getJwt() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token;
+}
 
 // ============================================================
-// documents — metadata reads/writes
+// documents — search
 // ============================================================
 
 export async function searchDocuments({
@@ -33,10 +39,7 @@ export async function searchDocuments({
   if (q.trim()) query = query.textSearch('search_vector', q.trim(), { type: 'websearch' });
   if (categoryId) query = query.eq('category_id', categoryId);
   if (dateFrom) query = query.gte('upload_date', dateFrom);
-  if (dateTo) {
-    query = query.lte('upload_date', `${dateTo}T23:59:59.999Z`);
-  }
-  // AND-match tags: chain .contains() so every tag must be present.
+  if (dateTo) query = query.lte('upload_date', `${dateTo}T23:59:59.999Z`);
   for (const tag of tags) {
     query = query.contains('tags', [tag]);
   }
@@ -54,27 +57,12 @@ export async function searchDocuments({
   return data ?? [];
 }
 
-// Build a URL the browser can use to fetch the file bytes. The Edge
-// Function authenticates the caller via the JWT in the Authorization
-// header, then streams the Drive file through.
-export function getFileUrl(driveFileId) {
-  return `${SUPABASE_FUNCTIONS_URL}/drive-download?id=${encodeURIComponent(driveFileId)}`;
-}
-
-// For <a download> we want a URL the browser can hit directly. Since
-// the download Edge Function requires the Authorization header, the
-// caller must fetch+blob it instead. detail.js does this in
-// downloadRow().
-const SUPABASE_FUNCTIONS_URL = (() => {
-  // Pulled from the supabase client config so it stays in sync with the
-  // rest of the app. supabase.functions is null at runtime — we have
-  // to read the URL off the auth client or pull from config.
-  return `${window.__SUPABASE_URL__}/functions/v1`;
-})();
+// ============================================================
+// documents — download (returns a blob)
+// ============================================================
 
 export async function downloadAsBlob(driveFileId) {
-  const session = await supabase.auth.getSession();
-  const jwt = session.data.session?.access_token;
+  const jwt = await getJwt();
   if (!jwt) throw new Error('Not signed in.');
 
   const res = await fetch(
@@ -83,20 +71,15 @@ export async function downloadAsBlob(driveFileId) {
   );
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
-    try { detail = (await res.json()).error ?? detail; } catch {}
+    try { detail = (await res.json()).error ?? detail; } catch { /* ok */ }
     throw new Error(detail);
   }
   return res.blob();
 }
 
 // ============================================================
-// documents — uploads (admin only)
+// documents — upload (admin only)
 // ============================================================
-
-async function jwt() {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token;
-}
 
 export async function uploadDocument({ file, title, categoryId, tags }) {
   if (file.size > MAX_FILE_BYTES) {
@@ -107,57 +90,57 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
   form.append('file', file);
   form.append('title', title);
   if (categoryId) form.append('category_id', categoryId);
-  form.append('tags', tags.join(','));
+  form.append('tags', (tags ?? []).join(','));
 
-  const token = await jwt();
+  const jwt = await getJwt();
   const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-upload`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${jwt}` },
     body: form,
   });
 
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
-    try { detail = (await res.json()).error ?? detail; } catch {}
+    try { detail = (await res.json()).error ?? detail; } catch { /* ok */ }
     throw new Error(detail);
   }
   const json = await res.json();
   return json.document;
 }
 
-// Step 1: if a new file was provided, upload it to Drive and get the new id.
+// ============================================================
+// documents — update (admin only)
+// ============================================================
+
+export async function updateDocument({ id, title, categoryId, tags, file }) {
   let newDriveFileId = null;
 
   if (file) {
+    if (file.size > MAX_FILE_BYTES) {
+      throw new Error('Replacement file too large.');
+    }
+    // Upload the new file.
     const form = new FormData();
     form.append('file', file);
     form.append('title', title);
     if (categoryId) form.append('category_id', categoryId);
-    form.append('tags', tags.join(','));
+    form.append('tags', (tags ?? []).join(','));
 
-    const token = await jwt();
+    const jwt = await getJwt();
     const upRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-upload`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${jwt}` },
       body: form,
     });
     if (!upRes.ok) {
       let detail = `HTTP ${upRes.status}`;
-      try { detail = (await upRes.json()).error ?? detail; } catch {}
+      try { detail = (await upRes.json()).error ?? detail; } catch { /* ok */ }
       throw new Error(detail);
     }
     const upJson = await upRes.json();
     newDriveFileId = upJson.document?.drive_file_id;
 
-    // Step 2: fetch the old drive_file_id so we can delete the old Drive file.
-    const { data: oldRow, error: oldErr } = await supabase
-      .from('documents')
-      .select('drive_file_id')
-      .eq('id', id)
-      .single();
-    if (oldErr) throw oldErr;
-
-    // Step 3: update the DB row with new metadata + new drive_file_id.
+    // Update the DB row with new metadata.
     const { data, error } = await supabase
       .from('documents')
       .update({
@@ -172,17 +155,10 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
       .select()
       .single();
     if (error) throw error;
-
-    // Step 4: delete the old Drive file (best-effort — don't fail the
-    // update if Drive refuses to delete the old file).
-    if (oldRow?.drive_file_id && oldRow.drive_file_id !== newDriveFileId) {
-      // We can't delete from Drive here (browser can't call Drive API), so
-      // we skip cleanup. Orphaned Drive files are harmless for an internal tool.
-    }
     return data;
   }
 
-  // No new file — just update the text metadata.
+  // No new file — update metadata only.
   const { data, error } = await supabase
     .from('documents')
     .update({ title, category_id: categoryId || null, tags })
@@ -193,16 +169,20 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
   return data;
 }
 
+// ============================================================
+// documents — delete (admin only)
+// ============================================================
+
 export async function deleteDocument(id) {
-  const token = await jwt();
+  const jwt = await getJwt();
   const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-delete`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),
   });
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
-    try { detail = (await res.json()).error ?? detail; } catch {}
+    try { detail = (await res.json()).error ?? detail; } catch { /* ok */ }
     throw new Error(detail);
   }
 }
@@ -244,11 +224,11 @@ export async function listUsers() {
 }
 
 export async function createUserViaEdgeFn({ email, password, role }) {
-  const token = await jwt();
-  if (!token) throw new Error('Not signed in.');
+  const jwt = await getJwt();
+  if (!jwt) throw new Error('Not signed in.');
   const { data, error } = await supabase.functions.invoke('create-user', {
     body: { email, password, role },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${jwt}` },
   });
   if (error) throw error;
   return data;
