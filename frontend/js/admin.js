@@ -222,7 +222,7 @@ async function renderUserList() {
       </tr>
     `).join('');
   } catch (e) {
-    els.usersBody.innerHTML = `<tr><td colspan="3" class="error">${escapeHtml(e.message)}</td></tr>`;
+    els.usersBody.innerHTML = `<tr><td colspan="3"><div class="empty-state error">${escapeHtml(e.message)}</div></td></tr>`;
   }
 }
 

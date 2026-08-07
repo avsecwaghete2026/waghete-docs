@@ -88,7 +88,7 @@ async function runSearch() {
   } catch (e) {
     if (e?.code === 'aborted') return; // superseded — silent
     console.error(e);
-    els.body.innerHTML = `<tr><td colspan="6" class="error center">Search failed.</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="6"><div class="empty-state error">Search failed.</div></td></tr>`;
   } finally {
     clearTimeout(slowTimer);
     els.loading.hidden = true;
@@ -102,20 +102,20 @@ function renderResults(rows) {
     : `${rows.length} result${rows.length === 1 ? '' : 's'}.`;
 
   if (rows.length === 0) {
-    els.body.innerHTML = `<tr><td colspan="6" class="muted center">No matches.</td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⌕</div>No documents match your filters.</div></td></tr>`;
     return;
   }
 
   const admin = isAdmin();
   els.body.innerHTML = rows.map((r) => `
     <tr data-id="${r.id}">
-      <td>${escapeHtml(r.title)}</td>
-      <td>${escapeHtml(r.categories?.name ?? '—')}</td>
-      <td>${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</td>
+      <td class="title-cell">${escapeHtml(r.title)}</td>
+      <td>${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
+      <td>${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
       <td>${formatDate(r.upload_date)}</td>
       <td>${escapeHtml(r.profiles?.email ?? '')}</td>
       <td class="actions">
-        <button type="button" class="icon-btn" data-action="download">Download</button>
+        <button type="button" class="icon-btn primary" data-action="download">Download</button>
         ${admin ? `
           <button type="button" class="icon-btn" data-action="edit">Edit</button>
           <button type="button" class="icon-btn danger" data-action="delete">Delete</button>
