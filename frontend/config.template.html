@@ -1,0 +1,13 @@
+<!--
+  Drop-in snippet for Cloudflare Pages. Put your project's URL + anon
+  key into Cloudflare Pages → Settings → Environment variables, then
+  use a tiny build step (or the Functions `_middleware`) to substitute
+  the values into this file before deploy.
+
+  For local development, replace the placeholders below with your real
+  values from the Supabase dashboard (Settings → API).
+-->
+<script>
+  window.__SUPABASE_URL__ = 'https://YOUR-PROJECT.supabase.co';
+  window.__SUPABASE_ANON_KEY__ = 'YOUR-ANON-KEY';
+</script>

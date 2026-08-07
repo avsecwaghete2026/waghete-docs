@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document Search</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-brand">Document Search</div>
+    <div class="navbar-user">
+      <span id="user-email" class="muted"></span>
+      <span id="user-role" class="badge"></span>
+      <button id="logout-btn" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" class="tab active" data-view="search">Search</button>
+    <button type="button" class="tab" data-view="admin" id="admin-tab" hidden>Admin</button>
+  </nav>
+
+  <main>
+    <!-- ============================================================
+         SEARCH VIEW (default; visible to all roles)
+         ============================================================ -->
+    <section id="view-search" class="view active">
+      <div class="search-bar">
+        <input id="search-q" type="search" placeholder="Search title…" autocomplete="off" />
+        <select id="search-category"><option value="">All categories</option></select>
+        <input id="search-tag" type="text" placeholder="Tag (comma-separated, AND-match)" />
+        <input id="search-date-from" type="date" />
+        <input id="search-date-to" type="date" />
+      </div>
+
+      <div class="results-meta">
+        <span id="results-count" class="muted"></span>
+        <span id="results-loading" class="loading" hidden>Searching…</span>
+      </div>
+
+      <table class="results">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Tags</th>
+            <th>Uploaded</th>
+            <th>By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="results-body">
+          <tr><td colspan="6" class="muted center">Type to search.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================
+         ADMIN VIEW (rendered only when role === 'admin')
+         ============================================================ -->
+    <section id="view-admin" class="view">
+      <h2>Upload document</h2>
+      <form id="upload-form">
+        <label>File<input type="file" id="upload-file" required /></label>
+        <label>Title<input type="text" id="upload-title" required /></label>
+        <label>Category
+          <select id="upload-category" required><option value="">—</option></select>
+        </label>
+        <label>Tags (comma-separated)<input type="text" id="upload-tags" /></label>
+        <button type="submit">Upload</button>
+        <p id="upload-error" class="error" hidden></p>
+      </form>
+
+      <h2>Edit / replace</h2>
+      <form id="edit-form" hidden>
+        <input type="hidden" id="edit-id" />
+        <label>Title<input type="text" id="edit-title" required /></label>
+        <label>Category
+          <select id="edit-category" required><option value="">—</option></select>
+        </label>
+        <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
+        <label>Replace file (optional)<input type="file" id="edit-file" /></label>
+        <button type="submit">Save changes</button>
+        <button type="button" id="edit-cancel">Cancel</button>
+        <p id="edit-error" class="error" hidden></p>
+      </form>
+
+      <h2>Categories</h2>
+      <form id="category-form" class="inline-form">
+        <input type="text" id="category-name" placeholder="New category name" required />
+        <button type="submit">Add</button>
+        <p id="category-error" class="error" hidden></p>
+      </form>
+      <ul id="category-list"></ul>
+
+      <h2>Users</h2>
+      <form id="user-form">
+        <label>Email<input type="email" id="user-email-input" required /></label>
+        <label>Temp password (min 8 chars)<input type="text" id="user-password" required minlength="8" /></label>
+        <label>Role
+          <select id="user-role-select">
+            <option value="viewer">Viewer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <button type="submit">Create user</button>
+        <p id="user-error" class="error" hidden></p>
+      </form>
+      <table class="results">
+        <thead><tr><th>Email</th><th>Role</th><th>Created</th></tr></thead>
+        <tbody id="users-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

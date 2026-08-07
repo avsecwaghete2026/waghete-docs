@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/deno.land/deno.json",
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+  }
+}
