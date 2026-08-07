@@ -123,14 +123,12 @@ function renderResults(rows) {
     </tr>
   `).join('');
 
-  els.body.addEventListener('click', onRowClick, { once: true });
+  // Always re-attach after re-render so new rows are clickable.
+  els.body.onclick = onRowClick;
 }
 
 async function onRowClick(ev) {
-  const btn = ev.target.closest('button[data-action]');
-  // Re-arm for the next click (we used { once: true } so we can detect
-  // clicks on the table that aren't on buttons).
-  els.body.addEventListener('click', onRowClick, { once: true });
+  const btn = ev.target.closest('button[data-action], a[data-action]');
   if (!btn) return;
 
   const tr = btn.closest('tr[data-id]');
@@ -138,10 +136,10 @@ async function onRowClick(ev) {
   if (!id) return;
 
   const action = btn.dataset.action;
-  if (action === 'open')      return openDetail(id);
+  if (action === 'open')     return openDetail(id);
   if (action === 'download')  return downloadRow(id);
-  if (action === 'edit')      return dispatchEdit(id);
-  if (action === 'delete')    return deleteRow(id, tr, btn);
+  if (action === 'edit')     return dispatchEdit(id);
+  if (action === 'delete')   return deleteRow(id, tr, btn);
 }
 
 function openDetail(id) {

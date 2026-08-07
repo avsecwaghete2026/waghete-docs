@@ -12,15 +12,25 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const ALLOWED_ORIGINS = new Set([
+// Accept any Cloudflare Pages domain (production + preview). Preview URLs
+// are random hashes so we can't maintain an allowlist.
+const KNOWN_ORIGINS = new Set([
   'https://waghete-docs.pages.dev',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
 ]);
 
+function isAllowed(origin: string | null): string {
+  if (!origin) return 'https://waghete-docs.pages.dev';
+  if (KNOWN_ORIGINS.has(origin)) return origin;
+  // Allow any Cloudflare Pages preview domain (*.pages.dev).
+  if (origin.endsWith('.pages.dev')) return origin;
+  // Fallback to the known production domain.
+  return 'https://waghete-docs.pages.dev';
+}
+
 export function corsHeaders(origin: string | null): HeadersInit {
-  const allowOrigin =
-    origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://waghete-docs.pages.dev';
+  const allowOrigin = isAllowed(origin);
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

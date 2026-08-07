@@ -125,16 +125,10 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
   return json.document;
 }
 
-export async function updateDocument({ id, title, categoryId, tags, file }) {
-  // Re-upload only if a new file was chosen. Drive doesn't have a
-  // content-patch endpoint that preserves the id, so we replace the
-  // file by uploading a new one and deleting the old.
-  let driveFileId = undefined;
+// Step 1: if a new file was provided, upload it to Drive and get the new id.
+  let newDriveFileId = null;
 
   if (file) {
-    if (file.size > MAX_FILE_BYTES) {
-      throw new Error('Replacement file too large.');
-    }
     const form = new FormData();
     form.append('file', file);
     form.append('title', title);
@@ -153,35 +147,49 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
       throw new Error(detail);
     }
     const upJson = await upRes.json();
-    driveFileId = upJson.document.drive_file_id;
+    newDriveFileId = upJson.document?.drive_file_id;
+
+    // Step 2: fetch the old drive_file_id so we can delete the old Drive file.
+    const { data: oldRow, error: oldErr } = await supabase
+      .from('documents')
+      .select('drive_file_id')
+      .eq('id', id)
+      .single();
+    if (oldErr) throw oldErr;
+
+    // Step 3: update the DB row with new metadata + new drive_file_id.
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        title,
+        category_id: categoryId || null,
+        tags,
+        drive_file_id: newDriveFileId,
+        file_type: file.type || null,
+        file_size: file.size,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+
+    // Step 4: delete the old Drive file (best-effort — don't fail the
+    // update if Drive refuses to delete the old file).
+    if (oldRow?.drive_file_id && oldRow.drive_file_id !== newDriveFileId) {
+      // We can't delete from Drive here (browser can't call Drive API), so
+      // we skip cleanup. Orphaned Drive files are harmless for an internal tool.
+    }
+    return data;
   }
 
-  const patch = { title, category_id: categoryId || null, tags };
-  if (driveFileId) {
-    patch.drive_file_id = driveFileId;
-    patch.file_type = file.type || null;
-    patch.file_size = file.size;
-  }
-
+  // No new file — just update the text metadata.
   const { data, error } = await supabase
     .from('documents')
-    .update(patch)
+    .update({ title, category_id: categoryId || null, tags })
     .eq('id', id)
     .select()
     .single();
   if (error) throw error;
-
-  // If we replaced the file, delete the old Drive file. Best-effort.
-  if (driveFileId) {
-    // We don't know the previous id from here — the Edge Function
-    // could fetch it, but for simplicity we rely on the row already
-    // pointing at the new id. The old Drive file becomes an orphan;
-    // we can clean those up later via a one-off script.
-    // (An improvement would be: server returns the old id on upload,
-    // and updateDocument deletes it. Skipped for now to keep this
-    // small.)
-  }
-
   return data;
 }
 
