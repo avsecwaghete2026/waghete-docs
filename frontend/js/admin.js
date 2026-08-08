@@ -145,14 +145,14 @@ function initCatSelector(selector, hiddenInput) {
       cancelAddCategory();
     }
   });
-  addInput.addEventListener('blur', async () => {
-    // Small delay so click events on options can fire first.
-    await new Promise((r) => setTimeout(r, 150));
-    if (!addInput.hidden && addInput.value.trim()) {
-      await commitNewCategory();
-    } else {
-      cancelAddCategory();
-    }
+  addInput.addEventListener('blur', (ev) => {
+    // Block this blur from reaching the document listener (which would
+    // close the dropdown before the click event can fire on the option).
+    ev.stopImmediatePropagation();
+    // Defer the close so clicks on options still fire first.
+    setTimeout(() => {
+      if (document.activeElement !== addInput) closeAllDropdowns();
+    }, 160);
   });
 
   async function commitNewCategory() {
@@ -196,10 +196,11 @@ function initCatSelector(selector, hiddenInput) {
     if (!selector.contains(ev.target)) closeAllDropdowns();
   });
 
-  // Stop propagation on all clicks inside the dropdown so the document
-  // listener never sees them — prevents the dropdown from re-closing
-  // right after an option is selected.
-  dropdown.addEventListener('click', (ev) => ev.stopPropagation());
+  // Block all events inside the dropdown from reaching the document listener,
+  // including blur which fires before click and would race to close the menu.
+  dropdown.addEventListener('click',      (ev) => ev.stopPropagation());
+  dropdown.addEventListener('mousedown', (ev) => ev.stopPropagation());
+  dropdown.addEventListener('blur',      (ev) => ev.stopPropagation());
 
   function closeAllDropdowns() {
     dropdown.hidden = true;
