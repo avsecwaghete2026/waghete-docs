@@ -107,8 +107,8 @@ function renderResults(rows) {
 
   const admin = isAdmin();
   els.body.innerHTML = rows.map((r) => `
-    <tr data-id="${r.id}">
-      <td class="title-cell"><a href="#" class="title-link" data-action="open">${escapeHtml(r.title)}</a></td>
+    <tr data-id="${r.id}" class="doc-row">
+      <td class="title-cell"><span class="title-link">${escapeHtml(r.title)}</span></td>
       <td>${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
       <td>${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
       <td>${formatDate(r.upload_date)}</td>
@@ -123,23 +123,29 @@ function renderResults(rows) {
     </tr>
   `).join('');
 
-  // Always re-attach after re-render so new rows are clickable.
+  // Single delegated handler: row clicks → detail, button clicks → actions.
   els.body.onclick = onRowClick;
 }
 
-async function onRowClick(ev) {
-  const btn = ev.target.closest('button[data-action], a[data-action]');
-  if (!btn) return;
+function onRowClick(ev) {
+  const tr = ev.target.closest('tr[data-id]');
+  if (!tr) return;
 
-  const tr = btn.closest('tr[data-id]');
-  const id = tr?.dataset.id;
-  if (!id) return;
+  const id = tr.dataset.id;
+  const btn = ev.target.closest('button[data-action]');
 
-  const action = btn.dataset.action;
-  if (action === 'open')     return openDetail(id);
-  if (action === 'download')  return downloadRow(id);
-  if (action === 'edit')     return dispatchEdit(id);
-  if (action === 'delete')   return deleteRow(id, tr, btn);
+  // Clicking any action button → do that action.
+  if (btn) {
+    switch (btn.dataset.action) {
+      case 'download': downloadRow(id); break;
+      case 'edit':    dispatchEdit(id); break;
+      case 'delete':  deleteRow(id, tr, btn); break;
+    }
+    return;
+  }
+
+  // Clicking anywhere else on the row → open detail modal.
+  openDetail(id);
 }
 
 function openDetail(id) {

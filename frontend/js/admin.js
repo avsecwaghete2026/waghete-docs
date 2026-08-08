@@ -96,6 +96,7 @@ function initCatSelector(selector, hiddenInput) {
 
   // Select a category.
   options.addEventListener('click', (ev) => {
+    ev.stopPropagation();
     const opt = ev.target.closest('[data-cat-id]');
     if (!opt) return;
     const id = opt.dataset.catId;
@@ -194,6 +195,11 @@ function initCatSelector(selector, hiddenInput) {
   document.addEventListener('click', (ev) => {
     if (!selector.contains(ev.target)) closeAllDropdowns();
   });
+
+  // Stop propagation on all clicks inside the dropdown so the document
+  // listener never sees them — prevents the dropdown from re-closing
+  // right after an option is selected.
+  dropdown.addEventListener('click', (ev) => ev.stopPropagation());
 
   function closeAllDropdowns() {
     dropdown.hidden = true;

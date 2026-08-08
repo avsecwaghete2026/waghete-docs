@@ -142,6 +142,15 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
     if (file.size > MAX_FILE_BYTES) {
       throw new Error('Replacement file too large.');
     }
+
+    // Look up the old Drive file ID so we can delete it after the upload.
+    const { data: existing } = await supabase
+      .from('documents')
+      .select('drive_file_id')
+      .eq('id', id)
+      .single();
+    const oldDriveFileId = existing?.drive_file_id ?? null;
+
     // Upload the new file.
     const form = new FormData();
     form.append('file', file);
@@ -178,6 +187,18 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
       .select()
       .single();
     if (error) throw error;
+
+    // Delete the old Drive file now that the new one is safely stored.
+    if (oldDriveFileId) {
+      try {
+        await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-delete`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: oldDriveFileId }),
+        });
+      } catch (_) { /* best-effort — the row is already updated */ }
+    }
+
     return data;
   }
 

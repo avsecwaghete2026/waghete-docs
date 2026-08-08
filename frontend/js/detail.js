@@ -218,8 +218,15 @@ let pdfjsLoadPromise = null;
 async function loadPdfJs() {
   if (pdfjsLib) return pdfjsLib;
   if (!pdfjsLoadPromise) {
-    pdfjsLoadPromise = import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm')
-      .then((mod) => { pdfjsLib = mod; return mod; });
+    // Use the legacy build (v2.x) — it bundles the worker internally so
+    // no separate worker fetch is needed and CORS is never an issue.
+    pdfjsLoadPromise = import('https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/pdf.min.mjs')
+      .then((mod) => {
+        // Suppress the "data page" worker warning — legacy build handles it.
+        mod.GlobalWorkerOptions = mod.GlobalWorkerOptions || {};
+        pdfjsLib = mod;
+        return mod;
+      });
   }
   return pdfjsLoadPromise;
 }
