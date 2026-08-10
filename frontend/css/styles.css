@@ -38,6 +38,9 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+
+  /* Min tap target. Apple's HIG and Material both recommend ~44–48px. */
+  --tap-min: 44px;
 }
 
 /* =====================================================================
@@ -142,6 +145,9 @@ form input, form select,
   background: var(--c-surface);
   color: var(--c-text);
   transition: border-color 0.15s, box-shadow 0.15s;
+  /* 16px prevents iOS Safari from auto-zooming on focus. */
+  font-size: 16px;
+  min-height: var(--tap-min);
 }
 form input:focus, form select:focus,
 .search-bar input:focus, .search-bar select:focus {
@@ -163,6 +169,8 @@ form button {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
   transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+  min-height: var(--tap-min);
+  font-size: 15px;
 }
 form button:hover { background: var(--c-primary-hover); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); }
 form button:active { transform: translateY(1px); }
@@ -186,6 +194,7 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   top: 0;
   z-index: 10;
   backdrop-filter: saturate(180%) blur(8px);
+  flex-wrap: wrap;
 }
 .navbar-brand {
   font-weight: 700;
@@ -225,6 +234,9 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   font-size: 13px;
   color: var(--c-text);
   font-weight: 500;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .navbar-user button {
   border: 1px solid var(--c-border);
@@ -235,6 +247,7 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   color: var(--c-text);
   font-weight: 500;
   transition: background 0.15s, border-color 0.15s;
+  min-height: var(--tap-min);
 }
 .navbar-user button:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
 
@@ -254,6 +267,7 @@ form button:disabled { background: #c7d2fe; box-shadow: none; cursor: not-allowe
   align-items: center;
   gap: 6px;
   transition: color 0.15s, background 0.15s;
+  min-height: var(--tap-min);
 }
 .tab svg { flex-shrink: 0; opacity: 0.7; }
 .tab:hover { color: var(--c-text); background: var(--c-surface-alt); }
@@ -421,11 +435,13 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   background: var(--c-surface);
   color: var(--c-text);
   font: inherit;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: var(--tap-min);
 }
 .cat-trigger:focus {
   outline: none;
@@ -778,4 +794,188 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   }
   .detail-sidebar { border-right: 0; border-bottom: 1px solid var(--c-border); max-height: 40%; }
   .detail-sidebar-inner { padding: 1.25rem 1rem; }
+}
+
+/* =====================================================================
+   Phone layout (≤640px). Android phones are typically 360–414dp wide;
+   we target up to 640px to also catch split-screen tablets in portrait.
+   ===================================================================== */
+@media (max-width: 640px) {
+  /* Tighter outer padding everywhere — 1rem instead of 1.5rem frees
+     enough room on a 360px viewport for inputs and cards. */
+  main { padding: 1rem 0.75rem 2rem; }
+
+  /* ----- Navbar: stack into two rows on phones -----
+     Row 1: brand on the left, sign-out on the right (no full email
+            or role badge — both eat horizontal space).
+     Row 2: tabs full-width, easy to thumb-tap. */
+  .navbar {
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .navbar-brand { font-size: 0; } /* hide text, logo only */
+  .nav-logo { height: 32px; }
+  .navbar-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: stretch;
+    gap: 0.4rem;
+  }
+  .navbar-tabs .tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.4rem;
+    font-size: 14px;
+  }
+  .navbar-user {
+    gap: 0.4rem;
+  }
+  .navbar-user #user-email,
+  .navbar-user #user-role {
+    display: none;
+  }
+  .navbar-user button {
+    padding: 0.4rem 0.7rem;
+    font-size: 13px;
+  }
+  .user-avatar { width: 28px; height: 28px; }
+
+  /* ----- Auth card: full-width on phones, with safe-area insets ----- */
+  .auth-body {
+    padding: 1rem;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    width: 100%;
+  }
+
+  /* ----- Search bar: single column, bigger spacing -----
+     Date pickers on Android Chrome can be sluggish when narrow; giving
+     them a full row makes the native picker much easier to use. */
+  .search-bar {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 0.65rem;
+  }
+
+  /* ----- Results: kill the table, render as cards. -----
+     A 6-column table at 360px means each cell is ~55px wide — tags
+     and titles overflow, buttons wrap, and you can't tap a row without
+     hitting a button. Card view fixes all of that and gives each
+     document a comfortable tap target. */
+  .results thead { display: none; }
+  .results,
+  .results tbody,
+  .results tr,
+  .results td { display: block; width: auto; }
+  .results {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .results tbody tr {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-soft);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+  .results tbody tr:last-child { margin-bottom: 0; }
+  .results td {
+    padding: 0.25rem 0;
+    border-bottom: 0;
+  }
+  /* Inject field labels via data-label on mobile. search.js builds the
+     rows; we map each td to a label via :nth-child. */
+  .results td.title-cell {
+    font-size: 15px;
+    margin-bottom: 0.4rem;
+  }
+  .results td.title-cell::before,
+  .results td:nth-child(2)::before,
+  .results td:nth-child(3)::before,
+  .results td:nth-child(4)::before,
+  .results td:nth-child(5)::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin-bottom: 0.15rem;
+  }
+  .results td.title-cell::before { content: ''; display: none; }
+  .results td.actions {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--c-border-soft);
+  }
+  .results td.actions .icon-btn {
+    flex: 1;
+    min-height: var(--tap-min);
+    font-size: 13px;
+  }
+  .results .actions { flex-wrap: wrap; }
+
+  /* ----- Admin grid -----
+     Already stacks at 700px; just tighten spacing on phones. */
+  .admin-card { padding: 1rem; }
+  .admin-card h2 { font-size: 0.85rem; }
+
+  /* ----- Modals: take nearly the full viewport on phones, and push
+     the close button into the top-right corner where the thumb can
+     reach it. Sidebar/preview already stack at 800px. */
+  .modal-panel {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh; /* dynamic viewport height — accounts for the
+                       mobile URL bar collapsing/expanding */
+    max-height: none;
+    max-width: none;
+    border-radius: 0;
+  }
+  .modal-panel-edit {
+    width: 100vw;
+    height: auto;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+  }
+  .modal-close {
+    width: 44px;
+    height: 44px;
+    top: 0.5rem;
+    right: 0.5rem;
+    /* Bigger hit area without changing the visible circle. */
+  }
+
+  /* Detail sidebar should scroll internally on phones, not be capped
+     at 40% — the preview is more useful and the sidebar can scroll. */
+  .detail-sidebar { max-height: 45%; }
+
+  /* Edit modal: drop the inner padding and let the form breathe. */
+  #edit-form { padding: 0.75rem 1rem 1rem; }
+  .edit-modal-title { padding: 1rem 1rem 0.5rem; }
+  .edit-modal-actions { flex-wrap: wrap; }
+  .edit-modal-actions .icon-btn { flex: 1; min-height: var(--tap-min); }
+
+  /* ----- File inputs are awkward on mobile; give them a bit of room. */
+  input[type="file"] { font-size: 14px; }
+}
+
+/* Stop hover-only affordances from sticking under the finger on touch
+   devices (a tap on a "hover" background looks stuck until you tap
+   elsewhere). */
+@media (hover: none) {
+  .tab:hover,
+  .navbar-user button:hover,
+  .icon-btn:hover { background: inherit; border-color: inherit; color: inherit; }
+  .results tbody tr:hover { background: var(--c-surface); }
+  .cat-option:hover { background: inherit; }
 }

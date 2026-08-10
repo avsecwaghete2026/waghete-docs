@@ -108,12 +108,12 @@ function renderResults(rows) {
   const admin = isAdmin();
   els.body.innerHTML = rows.map((r) => `
     <tr data-id="${r.id}" class="doc-row">
-      <td class="title-cell"><span class="title-link">${escapeHtml(r.title)}</span></td>
-      <td>${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
-      <td>${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
-      <td>${formatDate(r.upload_date)}</td>
-      <td>${escapeHtml(r.profiles?.email ?? '')}</td>
-      <td class="actions">
+      <td class="title-cell" data-label="Title"><span class="title-link">${escapeHtml(r.title)}</span></td>
+      <td data-label="Category">${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
+      <td data-label="Tags">${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
+      <td data-label="Uploaded">${formatDate(r.upload_date)}</td>
+      <td data-label="By">${escapeHtml(r.profiles?.email ?? '')}</td>
+      <td class="actions" data-label="Actions">
         <button type="button" class="icon-btn primary" data-action="download">Download</button>
         ${admin ? `
           <button type="button" class="icon-btn" data-action="edit">Edit</button>

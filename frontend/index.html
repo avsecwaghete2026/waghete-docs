@@ -2,12 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Document Search</title>
+  <!-- Hide the shell until app.js confirms a valid session. This stops
+       the brief flash of the main screen before the async auth check
+       redirects to login. -->
+  <style>html.preauth .app-shell { visibility: hidden; }</style>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="js/config.runtime.js"></script>
+  <!-- Synchronous pre-auth check. Runs before the body parses so an
+       unauthenticated visitor is bounced to login without ever seeing
+       the navbar/search table. -->
+  <script>
+    (function () {
+      var url = (window.__SUPABASE_URL__ || '').replace(/^https?:\/\//, '');
+      var ref = url.split('.')[0].split(':')[0]; // e.g. "abc123" from "abc123.supabase.co"
+      var key = ref ? 'sb-' + ref + '-auth-token' : '';
+      var has = false;
+      try {
+        var raw = key && window.localStorage.getItem(key);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          // Stored shape: { access_token, refresh_token, expires_at, ... }
+          has = !!(parsed && parsed.access_token && parsed.expires_at && parsed.expires_at > Math.floor(Date.now() / 1000));
+        }
+      } catch (_) { /* private mode / disabled storage — fall through */ }
+      if (!has) {
+        // Replace (not assign) so the back button can't bring the shell back.
+        window.location.replace('./login.html');
+      } else {
+        document.documentElement.classList.add('preauth');
+      }
+    })();
+  </script>
 </head>
 <body>
+  <div class="app-shell">
   <header class="navbar">
     <div class="navbar-brand">
       <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
@@ -200,6 +230,7 @@
       </div>
     </section>
   </main>
+  </div>
 
   <script type="module" src="js/app.js"></script>
 </body>

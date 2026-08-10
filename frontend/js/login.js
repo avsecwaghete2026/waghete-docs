@@ -1,7 +1,7 @@
 // Login page entry. Uses Supabase Auth — no custom hashing or cookies
 // here, those live in the supabase-js client.
 
-import { signIn } from './auth.js';
+import { getSession } from './auth.js';
 
 const form = document.getElementById('login-form');
 const errEl = document.getElementById('login-error');
@@ -12,6 +12,11 @@ function showError(msg) {
   errEl.hidden = false;
   errEl.textContent = msg;
 }
+
+// If the user already has a valid session, don't make them sign in again.
+getSession().then((session) => {
+  if (session) window.location.replace('./index.html');
+});
 
 form.addEventListener('submit', async (ev) => {
   ev.preventDefault();

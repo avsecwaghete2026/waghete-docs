@@ -21,7 +21,7 @@ async function bootstrap() {
   // Not signed in (or session was unusable)? Send to login.
   const session = await getSession();
   if (!session) {
-    window.location.href = './login.html';
+    window.location.replace('./login.html');
     return;
   }
 
@@ -30,9 +30,13 @@ async function bootstrap() {
   // whose profile we couldn't read.
   const profile = await ensureRole();
   if (!profile) {
-    window.location.href = './login.html';
+    window.location.replace('./login.html');
     return;
   }
+
+  // Auth confirmed — unhide the shell that the pre-auth block kept
+  // hidden to avoid a flash of the main screen on cold load.
+  document.documentElement.classList.remove('preauth');
 
   // Render navbar.
   els.email.textContent = profile.email;
@@ -47,7 +51,7 @@ async function bootstrap() {
 
   els.logout.addEventListener('click', async () => {
     await signOut();
-    window.location.href = './login.html';
+    window.location.replace('./login.html');
   });
 
   // Show admin tab only for admins.
