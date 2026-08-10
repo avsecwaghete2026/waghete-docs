@@ -109,8 +109,9 @@ Deno.serve(async (req) => {
     row = res.data;
     rowErr = res.error;
 
-    // Rename the old Drive file — only if the update succeeded.
-    if (!rowErr && existing.drive_file_id && existing.drive_file_id !== driveFileId) {
+    // Rename the old Drive file — only if the update succeeded and there was
+    // a previous file to rename (empty string ≠ falsy, so check explicitly).
+    if (!rowErr && existing.drive_file_id !== '' && existing.drive_file_id !== driveFileId) {
       const ts = formatDate(new Date());
       const newName = `${existing.title} (replaced at ${ts})`;
       renameFileInDrive(existing.drive_file_id, newName).catch((e) => {
