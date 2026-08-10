@@ -84,12 +84,12 @@ Deno.serve(async (req) => {
 
   if (documentId) {
     // Fetch the existing row to get title + old drive_file_id for the rename.
-    const existing = await admin
+    const { data: existing, error: existingErr } = await admin
       .from('documents')
       .select('id, title, drive_file_id, deleted_at')
       .eq('id', documentId)
       .single();
-    if (!existing || existing.deleted_at) {
+    if (existingErr || !existing || existing.deleted_at) {
       return json({ error: 'not_found' }, 404, origin);
     }
 
@@ -110,13 +110,23 @@ Deno.serve(async (req) => {
     rowErr = res.error;
 
     // Rename the old Drive file — only if the update succeeded and there was
-    // a previous file to rename (empty string ≠ falsy, so check explicitly).
-    if (!rowErr && existing.drive_file_id !== '' && existing.drive_file_id !== driveFileId) {
+    // a previous file to rename.
+    if (!rowErr && existing.drive_file_id && existing.drive_file_id !== driveFileId) {
       const ts = formatDate(new Date());
       const newName = `${existing.title} (replaced at ${ts})`;
-      renameFileInDrive(existing.drive_file_id, newName).catch((e) => {
-        console.warn('Failed to rename old Drive file:', e);
-      });
+      try {
+        await renameFileInDrive(existing.drive_file_id, newName);
+      } catch (e: any) {
+        if (e?.message?.includes('404')) {
+          // Old file already gone from Drive — nothing to rename, skip silently.
+          console.warn('[drive-upload] Old Drive file not found (already deleted), skipping rename.', {
+            drive_file_id: existing.drive_file_id,
+            error: e?.message,
+          });
+        } else {
+          console.warn('[drive-upload] Failed to rename old Drive file:', e);
+        }
+      }
     }
   } else {
     const res = await admin

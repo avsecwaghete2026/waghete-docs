@@ -151,7 +151,8 @@ export async function deleteFromDrive(fileId: string): Promise<void> {
 
 export async function renameFileInDrive(fileId: string, newName: string): Promise<void> {
   const accessToken = await getAccessToken();
-  const res = await fetch(`${DRIVE_FILES_URL}/${encodeURIComponent(fileId)}`, {
+  const url = `${DRIVE_FILES_URL}/${encodeURIComponent(fileId)}`;
+  const res = await fetch(url, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -161,7 +162,8 @@ export async function renameFileInDrive(fileId: string, newName: string): Promis
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Drive rename failed (${res.status}): ${text}`);
+    const status = res.status;
+    throw new Error(`Drive rename failed (${status}): ${text}\nURL: ${url}`);
   }
 }
 

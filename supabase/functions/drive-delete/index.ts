@@ -59,12 +59,16 @@ Deno.serve(async (req) => {
   }
 
   // 2. Rename the Drive file instead of deleting it.
-  //    Best-effort — failure here is logged but doesn't affect the soft delete.
+  //    Best-effort — 404 means the file is already gone (skip silently).
   if (row.drive_file_id) {
     try {
       await renameFileInDrive(row.drive_file_id, newDriveName);
-    } catch (e) {
-      console.warn('Drive rename failed (file may still be live):', e);
+    } catch (e: any) {
+      if (e?.message?.includes('404')) {
+        console.warn('[drive-delete] Old Drive file not found (already gone), skipping rename.');
+      } else {
+        console.warn('Drive rename failed (file may still be live):', e);
+      }
     }
   }
 
