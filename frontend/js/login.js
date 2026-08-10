@@ -1,7 +1,7 @@
 // Login page entry. Uses Supabase Auth — no custom hashing or cookies
 // here, those live in the supabase-js client.
 
-import { getSession } from './auth.js';
+import { getSession, signIn } from './auth.js';
 
 const form = document.getElementById('login-form');
 const errEl = document.getElementById('login-error');
