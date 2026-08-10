@@ -220,7 +220,7 @@ async function loadPdfJs() {
   if (!pdfjsLoadPromise) {
     // Use the legacy build (v2.x) — it bundles the worker internally so
     // no separate worker fetch is needed and CORS is never an issue.
-    pdfjsLoadPromise = import('https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.min.mjs')
+    pdfjsLoadPromise = import(new URL('../vendor/pdf.min.mjs', import.meta.url).href)
       .then((mod) => {
         // Suppress the "data page" worker warning — legacy build handles it.
         mod.GlobalWorkerOptions = mod.GlobalWorkerOptions || {};

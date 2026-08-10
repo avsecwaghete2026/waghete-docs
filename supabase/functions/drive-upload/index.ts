@@ -39,6 +39,9 @@ Deno.serve(async (req) => {
   const title = (form.get('title') as string | null)?.trim() ?? '';
   const categoryId = (form.get('category_id') as string | null) ?? '';
   const tagsRaw = (form.get('tags') as string | null) ?? '';
+  // When replacing the file on an existing row, the frontend passes the
+  // row's id so we update in place instead of inserting a duplicate.
+  const documentId = (form.get('document_id') as string | null)?.trim() ?? '';
 
   if (!(file instanceof File)) {
     return json({ error: 'file_required' }, 400, origin);
@@ -68,32 +71,57 @@ Deno.serve(async (req) => {
     return json({ error: 'drive_upload_failed', detail: String(e) }, 502, origin);
   }
 
-  // 2. Insert the metadata row. If the insert fails we try to clean up
-  //    the orphan Drive file.
+  // 2. Persist the row. If `document_id` was supplied we UPDATE in place
+  //    (file replacement); otherwise we INSERT a new row (initial upload).
+  //    We must update the existing row's drive_file_id atomically so no
+  //    duplicate row is created.
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: row, error: rowErr } = await admin
-    .from('documents')
-    .insert({
-      title,
-      category_id: categoryId || null,
-      tags,
-      uploaded_by: caller.id,
-      drive_file_id: driveFileId,
-      file_type: file.type || null,
-      file_size: file.size,
-    })
-    .select()
-    .single();
+  let row: any;
+  let rowErr: any;
+
+  if (documentId) {
+    const res = await admin
+      .from('documents')
+      .update({
+        title,
+        category_id: categoryId || null,
+        tags,
+        drive_file_id: driveFileId,
+        file_type: file.type || null,
+        file_size: file.size,
+      })
+      .eq('id', documentId)
+      .select()
+      .single();
+    row = res.data;
+    rowErr = res.error;
+  } else {
+    const res = await admin
+      .from('documents')
+      .insert({
+        title,
+        category_id: categoryId || null,
+        tags,
+        uploaded_by: caller.id,
+        drive_file_id: driveFileId,
+        file_type: file.type || null,
+        file_size: file.size,
+      })
+      .select()
+      .single();
+    row = res.data;
+    rowErr = res.error;
+  }
 
   if (rowErr || !row) {
     // Best-effort cleanup; failure here is logged but doesn't override
     // the user-facing error.
     const { deleteFromDrive } = await import('../_shared/google.ts');
     await deleteFromDrive(driveFileId).catch(() => {});
-    return json({ error: 'db_insert_failed', detail: rowErr?.message ?? 'unknown' }, 500, origin);
+    return json({ error: 'db_persist_failed', detail: rowErr?.message ?? 'unknown' }, 500, origin);
   }
 
   return json({ ok: true, document: row }, 200, origin);
