@@ -136,8 +136,6 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
 // ============================================================
 
 export async function updateDocument({ id, title, categoryId, tags, file }) {
-  let newDriveFileId = null;
-
   if (file) {
     if (file.size > MAX_FILE_BYTES) {
       throw new Error('Replacement file too large.');
@@ -151,12 +149,14 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
       .single();
     const oldDriveFileId = existing?.drive_file_id ?? null;
 
-    // Upload the new file.
+    // Upload the new file. The server treats `document_id` as a signal
+    // to UPDATE the row in place rather than INSERT a new one.
     const form = new FormData();
     form.append('file', file);
     form.append('title', title);
     if (categoryId) form.append('category_id', categoryId);
     form.append('tags', (tags ?? []).join(','));
+    form.append('document_id', id);
 
     const jwt = await getJwt();
     const upRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-upload`, {
@@ -170,26 +170,10 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
       throw new Error(detail);
     }
     const upJson = await upRes.json();
-    newDriveFileId = upJson.document?.drive_file_id;
-
-    // Update the DB row with new metadata.
-    const { data, error } = await supabase
-      .from('documents')
-      .update({
-        title,
-        category_id: categoryId || null,
-        tags,
-        drive_file_id: newDriveFileId,
-        file_type: file.type || null,
-        file_size: file.size,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
+    const data = upJson.document;
 
     // Delete the old Drive file now that the new one is safely stored.
-    if (oldDriveFileId) {
+    if (oldDriveFileId && oldDriveFileId !== data?.drive_file_id) {
       try {
         await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-delete`, {
           method: 'POST',
