@@ -6,7 +6,7 @@
 // file + structured fields together from the browser without base64
 // bloat.
 
-import { uploadToDrive } from '../_shared/google.ts';
+import { uploadToDrive, renameFileInDrive } from '../_shared/google.ts';
 import { authenticate, corsHeaders, json, preflight } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -83,6 +83,16 @@ Deno.serve(async (req) => {
   let rowErr: any;
 
   if (documentId) {
+    // Fetch the existing row to get title + old drive_file_id for the rename.
+    const existing = await admin
+      .from('documents')
+      .select('id, title, drive_file_id, deleted_at')
+      .eq('id', documentId)
+      .single();
+    if (!existing || existing.deleted_at) {
+      return json({ error: 'not_found' }, 404, origin);
+    }
+
     const res = await admin
       .from('documents')
       .update({
@@ -98,6 +108,15 @@ Deno.serve(async (req) => {
       .single();
     row = res.data;
     rowErr = res.error;
+
+    // Soft-delete the old Drive file by renaming it.
+    if (!rowErr && existing.drive_file_id && existing.drive_file_id !== driveFileId) {
+      const ts = formatDate(new Date());
+      const newName = `${existing.title} (replaced at ${ts})`;
+      renameFileInDrive(existing.drive_file_id, newName).catch((e) => {
+        console.warn('Failed to rename old Drive file:', e);
+      });
+    }
   } else {
     const res = await admin
       .from('documents')
@@ -126,3 +145,8 @@ Deno.serve(async (req) => {
 
   return json({ ok: true, document: row }, 200, origin);
 });
+
+function formatDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

@@ -196,6 +196,7 @@ async function lookupRow(id) {
     .from('documents')
     .select('id, title, drive_file_id')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
   if (error) { showToast(`Lookup failed: ${error.message}`, 'error'); return null; }
   return data;

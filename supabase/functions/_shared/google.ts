@@ -149,6 +149,22 @@ export async function deleteFromDrive(fileId: string): Promise<void> {
   }
 }
 
+export async function renameFileInDrive(fileId: string, newName: string): Promise<void> {
+  const accessToken = await getAccessToken();
+  const res = await fetch(`${DRIVE_FILES_URL}/${encodeURIComponent(fileId)}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Drive rename failed (${res.status}): ${text}`);
+  }
+}
+
 // ----- utils --------------------------------------------------------------
 
 function bytesToB64(bytes: Uint8Array): string {

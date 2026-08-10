@@ -48,11 +48,14 @@ Deno.serve(async (req) => {
   });
   const { data: row, error: rowErr } = await admin
     .from('documents')
-    .select('id, title, drive_file_id')
+    .select('id, title, drive_file_id, deleted_at')
     .eq('drive_file_id', fileId)
     .maybeSingle();
 
   if (rowErr || !row) {
+    return json({ error: 'not_found' }, 404, origin);
+  }
+  if (row.deleted_at) {
     return json({ error: 'not_found' }, 404, origin);
   }
 

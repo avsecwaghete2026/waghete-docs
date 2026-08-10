@@ -1,8 +1,8 @@
-// drive-delete: admin-only. Removes the document row and the
-// underlying Drive file. Accepts the document id (not the Drive file
-// id) so the caller never has to know Drive's internals.
+// drive-delete: admin-only. Soft-deletes the document row (sets deleted_at)
+// and renames the Drive file to "[name] (deleted at YYYY-MM-DD HH:mm)" instead
+// of actually deleting it — so it can be recovered if needed.
 
-import { deleteFromDrive } from '../_shared/google.ts';
+import { renameFileInDrive } from '../_shared/google.ts';
 import { authenticate, json, preflight } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -32,27 +32,46 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Fetch the Drive file id first.
+  // Fetch the row first — we need title + drive_file_id for the rename.
   const { data: row, error: fetchErr } = await admin
     .from('documents')
-    .select('drive_file_id')
+    .select('id, title, drive_file_id, deleted_at')
     .eq('id', id)
     .single();
   if (fetchErr || !row) {
     return json({ error: 'not_found' }, 404, origin);
   }
-
-  // Delete the row first; if it fails we leave Drive alone. If row
-  // deletion succeeds but Drive deletion fails, we still return
-  // success — orphan files can be cleaned up later.
-  const { error: delErr } = await admin.from('documents').delete().eq('id', id);
-  if (delErr) {
-    return json({ error: 'db_delete_failed', detail: delErr.message }, 500, origin);
+  // Already soft-deleted — nothing to do.
+  if (row.deleted_at) {
+    return json({ ok: true, already_deleted: true }, 200, origin);
   }
 
-  await deleteFromDrive(row.drive_file_id).catch((e) => {
-    console.warn('Drive delete failed (orphan left in Drive):', e);
-  });
+  const deletedAt = new Date();
+  const newDriveName = `${row.title} (deleted at ${formatDate(deletedAt)})`;
 
-  return json({ ok: true }, 200, origin);
+  // 1. Mark the row as deleted (soft delete).
+  const { error: updateErr } = await admin
+    .from('documents')
+    .update({ deleted_at: deletedAt.toISOString() })
+    .eq('id', id);
+  if (updateErr) {
+    return json({ error: 'db_update_failed', detail: updateErr.message }, 500, origin);
+  }
+
+  // 2. Rename the Drive file instead of deleting it.
+  //    Best-effort — failure here is logged but doesn't affect the soft delete.
+  if (row.drive_file_id) {
+    try {
+      await renameFileInDrive(row.drive_file_id, newDriveName);
+    } catch (e) {
+      console.warn('Drive rename failed (file may still be live):', e);
+    }
+  }
+
+  return json({ ok: true, deleted_at: deletedAt.toISOString() }, 200, origin);
 });
+
+function formatDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

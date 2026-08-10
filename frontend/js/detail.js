@@ -61,6 +61,7 @@ export async function open(id) {
     .select('id, title, category_id, tags, drive_file_id, file_type, file_size, upload_date, ' +
             'categories(name), profiles!documents_uploaded_by_fkey(email)')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
   if (error) { showToast(`Could not open document: ${error.message}`, 'error'); return; }
 

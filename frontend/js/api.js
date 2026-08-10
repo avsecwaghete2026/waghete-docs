@@ -36,9 +36,10 @@ export async function searchDocuments({
   let query = supabase
     .from('documents')
     .select(
-      'id, title, category_id, tags, uploaded_by, upload_date, drive_file_id, file_type, file_size, ' +
+      'id, title, category_id, tags, uploaded_by, upload_date, drive_file_id, file_type, file_size, deleted_at, ' +
       'categories(name), profiles!documents_uploaded_by_fkey(email)',
     )
+    .is('deleted_at', null)
     .order('upload_date', { ascending: false })
     .limit(fetchMore ? 300 : 100);
 
