@@ -218,14 +218,12 @@ let pdfjsLoadPromise = null;
 async function loadPdfJs() {
   if (pdfjsLib) return pdfjsLib;
   if (!pdfjsLoadPromise) {
-    // Use the legacy build (v2.x) — it bundles the worker internally so
-    // no separate worker fetch is needed and CORS is never an issue.
-    pdfjsLoadPromise = import(new URL('../vendor/pdf.min.mjs', import.meta.url).href)
+    // Bundled locally under /vendor — no CDN, no CORS. v4 ESM requires us
+    // to point the worker at a local file before any getDocument() call.
+    const baseUrl = new URL('../vendor/', import.meta.url).href;
+    pdfjsLoadPromise = import(new URL('./pdf.min.mjs', baseUrl).href)
       .then((mod) => {
-        // Legacy v2 build bundles its worker internally, so we don't need
-        // to configure GlobalWorkerOptions.workerSrc. We just store the
-        // module for later use — the module namespace is frozen, so don't
-        // try to mutate it.
+        mod.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.mjs', baseUrl).href;
         pdfjsLib = mod;
         return mod;
       });
