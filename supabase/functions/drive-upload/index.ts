@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     row = res.data;
     rowErr = res.error;
 
-    // Soft-delete the old Drive file by renaming it.
+    // Rename the old Drive file — only if the update succeeded.
     if (!rowErr && existing.drive_file_id && existing.drive_file_id !== driveFileId) {
       const ts = formatDate(new Date());
       const newName = `${existing.title} (replaced at ${ts})`;
