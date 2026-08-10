@@ -155,8 +155,11 @@ function openDetail(id) {
 async function downloadRow(id) {
   try {
     const btn = document.activeElement;
-    const origText = btn?.textContent;
-    if (btn?.tagName === 'BUTTON') { btn.disabled = true; btn.textContent = '…'; }
+    const origHtml = btn?.tagName === 'BUTTON' ? btn.innerHTML : '';
+    if (btn?.tagName === 'BUTTON') {
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" /></svg>…`;
+    }
     const rowData = await lookupRow(id);
     if (!rowData) return;
     const blob = await downloadAsBlob(rowData.drive_file_id);
@@ -172,7 +175,7 @@ async function downloadRow(id) {
     alert(`Download failed: ${e.message}`);
   } finally {
     const btns = document.querySelectorAll('[data-action="download"]');
-    btns.forEach(b => { b.disabled = false; b.textContent = 'Download'; });
+    btns.forEach(b => { b.disabled = false; b.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download`; });
   }
 }
 

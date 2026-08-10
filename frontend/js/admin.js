@@ -96,7 +96,6 @@ function initCatSelector(selector, hiddenInput) {
 
   // Select a category.
   options.addEventListener('click', (ev) => {
-    ev.stopPropagation();
     const opt = ev.target.closest('[data-cat-id]');
     if (!opt) return;
     const id = opt.dataset.catId;
@@ -277,9 +276,8 @@ async function onUpload(ev) {
   }
 
   const submit = els.uploadForm.querySelector('button[type=submit]');
-  const origText = submit.textContent;
-  submit.disabled = true;
-  submit.textContent = 'Uploading…';
+  const origHtml = submit.innerHTML;
+  setBtnLoading(submit, 'Uploading…');
   try {
     const session = await getSession();
     await uploadDocument({ file, title, categoryId: categoryId || null, tags, uploaderId: session.user.id });
@@ -289,8 +287,7 @@ async function onUpload(ev) {
   } catch (e) {
     showError(els.uploadError, e.message);
   } finally {
-    submit.disabled = false;
-    submit.textContent = origText;
+    restoreBtn(submit, origHtml);
   }
 }
 
@@ -317,9 +314,8 @@ async function onEdit(ev) {
   }
 
   const submit = els.editForm.querySelector('button[type=submit]');
-  const origText = submit.textContent;
-  submit.disabled = true;
-  submit.textContent = 'Saving…';
+  const origHtml = submit.innerHTML;
+  setBtnLoading(submit, 'Saving…');
   try {
     const session = await getSession();
     await updateDocument({
@@ -331,8 +327,7 @@ async function onEdit(ev) {
   } catch (e) {
     showError(els.editError, e.message);
   } finally {
-    submit.disabled = false;
-    submit.textContent = origText;
+    restoreBtn(submit, origHtml);
   }
 }
 
@@ -365,7 +360,8 @@ async function onCreateUser(ev) {
     return showError(els.userError, 'Password must be at least 8 characters.');
   }
   const submit = els.userForm.querySelector('button[type=submit]');
-  submit.disabled = true;
+  const origHtml = submit.innerHTML;
+  setBtnLoading(submit, 'Creating…');
   try {
     await createUserViaEdgeFn({ email, password, role });
     els.userForm.reset();
@@ -373,13 +369,25 @@ async function onCreateUser(ev) {
   } catch (e) {
     showError(els.userError, e.message);
   } finally {
-    submit.disabled = false;
+    restoreBtn(submit, origHtml);
   }
 }
 
 // ============================================================
 // helpers
 // ============================================================
+
+const SPINNER_SVG = `<svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" /></svg>`;
+
+function setBtnLoading(btn, label) {
+  btn.disabled = true;
+  btn.innerHTML = `${SPINNER_SVG}${label}`;
+}
+
+function restoreBtn(btn, originalHTML) {
+  btn.disabled = false;
+  btn.innerHTML = originalHTML;
+}
 
 function showError(el, msg) {
   if (!msg) { el.hidden = true; el.textContent = ''; return; }
