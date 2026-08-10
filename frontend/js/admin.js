@@ -12,6 +12,7 @@ import {
   parseTags,
 } from './api.js';
 import { getSession } from './auth.js';
+import { showToast } from './toast.js';
 import { supabase, MAX_FILE_BYTES, ALLOWED_MIME } from './supabaseClient.js';
 
 const els = {};
@@ -123,7 +124,7 @@ function initCatSelector(selector, hiddenInput) {
       }
       window.dispatchEvent(new CustomEvent('docsearch:refresh'));
     } catch (e) {
-      alert(`Delete failed: ${e.message}`);
+      showToast(`Delete failed: ${e.message}`, 'error');
     }
   });
 
@@ -164,7 +165,7 @@ function initCatSelector(selector, hiddenInput) {
       await refreshCatOptions();
       closeAllDropdowns();
     } catch (e) {
-      alert(`Failed to create category: ${e.message}`);
+      showToast(`Failed to create category: ${e.message}`, 'error');
     }
   }
 
@@ -242,7 +243,7 @@ async function openEditModal(id) {
     els.editModal.setAttribute('aria-hidden', 'false');
     els.editTitle.focus();
   } catch (e) {
-    alert(`Could not load document: ${e.message}`);
+    showToast(`Could not load document: ${e.message}`, 'error');
   }
 }
 
@@ -284,6 +285,7 @@ async function onUpload(ev) {
     els.uploadForm.reset();
     els.uploadCatSel.querySelector('.cat-trigger-label').textContent = '—';
     window.dispatchEvent(new CustomEvent('docsearch:refresh'));
+    showToast('Document uploaded.', 'success');
   } catch (e) {
     showError(els.uploadError, e.message);
   } finally {
@@ -324,6 +326,7 @@ async function onEdit(ev) {
     });
     closeEditModal();
     window.dispatchEvent(new CustomEvent('docsearch:refresh'));
+    showToast('Document updated.', 'success');
   } catch (e) {
     showError(els.editError, e.message);
   } finally {
@@ -366,6 +369,7 @@ async function onCreateUser(ev) {
     await createUserViaEdgeFn({ email, password, role });
     els.userForm.reset();
     await renderUserList();
+    showToast('User created.', 'success');
   } catch (e) {
     showError(els.userError, e.message);
   } finally {

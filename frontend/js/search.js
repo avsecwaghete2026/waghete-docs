@@ -11,6 +11,7 @@ import {
   downloadAsBlob,
 } from './api.js';
 import { isAdmin, ensureRole } from './auth.js';
+import { showToast } from './toast.js';
 
 const TEXT_DEBOUNCE_MS = 250;
 const SLOW_QUERY_MS = 200;
@@ -114,10 +115,19 @@ function renderResults(rows) {
       <td data-label="Uploaded">${formatDate(r.upload_date)}</td>
       <td data-label="By">${escapeHtml(r.profiles?.email ?? '')}</td>
       <td class="actions" data-label="Actions">
-        <button type="button" class="icon-btn primary" data-action="download">Download</button>
+        <button type="button" class="icon-btn primary" data-action="download">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
         ${admin ? `
-          <button type="button" class="icon-btn" data-action="edit">Edit</button>
-          <button type="button" class="icon-btn danger" data-action="delete">Delete</button>
+          <button type="button" class="icon-btn" data-action="edit">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Edit
+          </button>
+          <button type="button" class="icon-btn danger" data-action="delete">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
         ` : ''}
       </td>
     </tr>
@@ -171,8 +181,9 @@ async function downloadRow(id) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    showToast('Download started.', 'info');
   } catch (e) {
-    alert(`Download failed: ${e.message}`);
+    showToast(`Download failed: ${e.message}`, 'error');
   } finally {
     const btns = document.querySelectorAll('[data-action="download"]');
     btns.forEach(b => { b.disabled = false; b.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download`; });
@@ -186,7 +197,7 @@ async function lookupRow(id) {
     .select('id, title, drive_file_id')
     .eq('id', id)
     .single();
-  if (error) { alert(`Lookup failed: ${error.message}`); return null; }
+  if (error) { showToast(`Lookup failed: ${error.message}`, 'error'); return null; }
   return data;
 }
 
@@ -196,8 +207,9 @@ async function deleteRow(id, tr, btn) {
   try {
     await deleteDocument(id);
     tr.remove();
+    showToast('Document deleted.', 'success');
   } catch (e) {
-    alert(`Delete failed: ${e.message}`);
+    showToast(`Delete failed: ${e.message}`, 'error');
     btn.disabled = false;
   }
 }

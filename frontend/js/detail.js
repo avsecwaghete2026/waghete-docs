@@ -16,6 +16,7 @@ import { downloadAsBlob } from './api.js';
 import { isAdmin } from './auth.js';
 import { deleteDocument } from './api.js';
 import { supabase } from './supabaseClient.js';
+import { showToast } from './toast.js';
 
 const els = {};
 let pdfjsLib = null;
@@ -61,7 +62,7 @@ export async function open(id) {
             'categories(name), profiles!documents_uploaded_by_fkey(email)')
     .eq('id', id)
     .single();
-  if (error) { alert(`Could not open document: ${error.message}`); return; }
+  if (error) { showToast(`Could not open document: ${error.message}`, 'error'); return; }
 
   els.title.textContent    = row.title;
   els.category.innerHTML   = row.categories?.name
@@ -91,8 +92,9 @@ export async function open(id) {
       await deleteDocument(row.id);
       close();
       window.dispatchEvent(new CustomEvent('docsearch:refresh'));
+      showToast('Document deleted.', 'success');
     } catch (e) {
-      alert(`Delete failed: ${e.message}`);
+      showToast(`Delete failed: ${e.message}`, 'error');
     }
   };
 
@@ -246,8 +248,9 @@ async function downloadRow(row) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    showToast('Download started.', 'info');
   } catch (e) {
-    alert(`Download failed: ${e.message}`);
+    showToast(`Download failed: ${e.message}`, 'error');
   }
 }
 
