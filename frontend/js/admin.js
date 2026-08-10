@@ -96,7 +96,7 @@ function initCatSelector(selector, hiddenInput) {
   });
 
   // Select a category.
-  options.addEventListener('click', (ev) => {
+  dropdown.addEventListener('click', (ev) => {
     const opt = ev.target.closest('[data-cat-id]');
     if (!opt) return;
     const id = opt.dataset.catId;
@@ -107,7 +107,7 @@ function initCatSelector(selector, hiddenInput) {
   });
 
   // Delete a category.
-  options.addEventListener('click', async (ev) => {
+  dropdown.addEventListener('click', async (ev) => {
     const delBtn = ev.target.closest('[data-delete-cat]');
     if (!delBtn) return;
     ev.stopPropagation();
@@ -196,9 +196,11 @@ function initCatSelector(selector, hiddenInput) {
     if (!selector.contains(ev.target)) closeAllDropdowns();
   });
 
-  // Block all events inside the dropdown from reaching the document listener,
-  // including blur which fires before click and would race to close the menu.
-  dropdown.addEventListener('click',      (ev) => ev.stopPropagation());
+  // Block mousedown + blur from reaching the document listener — the
+  // document listener is the "click outside closes" path, but mousedown
+  // fires before click and would otherwise race with option handlers.
+  // Click is allowed to bubble so the option/delete handlers above run,
+  // but the document listener below closes on outside clicks only.
   dropdown.addEventListener('mousedown', (ev) => ev.stopPropagation());
   dropdown.addEventListener('blur',      (ev) => ev.stopPropagation());
 
