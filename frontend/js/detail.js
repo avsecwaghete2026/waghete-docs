@@ -39,9 +39,10 @@ export async function initDetail() {
   });
 
   // Defensive: hide admin-only buttons immediately for non-admins.
+  // Use style.display so this bypasses the CSS cascade entirely.
   if (!isAdmin()) {
-    els.edit.hidden     = true;
-    els.deleteBtn.hidden = true;
+    els.edit.style.display     = 'none';
+    els.deleteBtn.style.display = 'none';
   }
 
   els.modal.addEventListener('click', (ev) => {
@@ -89,11 +90,11 @@ export async function open(id) {
   els.type.textContent     = row.file_type ?? '—';
   els.size.textContent     = row.file_size ? formatBytes(row.file_size) : '—';
 
-  // Only show edit/delete for admins. isAdmin() returns true only when
-  // window.__sessionRole__ is explicitly 'admin' (not null/undefined).
+  // Only show edit/delete for admins. Use style.display so this bypasses
+  // the CSS cascade entirely.
   const isAdminUser = isAdmin();
-  els.edit.hidden       = !isAdminUser;
-  els.deleteBtn.hidden  = !isAdminUser;
+  els.edit.style.display      = isAdminUser ? '' : 'none';
+  els.deleteBtn.style.display = isAdminUser ? '' : 'none';
 
   els.download.onclick  = () => downloadRow(row);
   els.edit.onclick      = () => {
