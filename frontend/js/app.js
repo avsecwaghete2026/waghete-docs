@@ -11,7 +11,6 @@ const els = {
   avatar:   document.getElementById('user-avatar'),
   role:     document.getElementById('user-role'),
   logout:   document.getElementById('logout-btn'),
-  login:    document.getElementById('login-btn'),
   tabs:     document.getElementById('tabs'),
   adminTab: document.getElementById('admin-tab'),
   sidebar:  document.getElementById('sidebar'),
@@ -65,9 +64,7 @@ async function bootstrap() {
   });
 
   // Show login button for unauthenticated visitors (if they somehow reach index.html).
-  els.login.addEventListener('click', () => {
-    window.location.replace('./login.html');
-  });
+  // No login button in sidebar — they go directly to the login page.
 
   // Show admin tab only for admins.
   if (profile.role === 'admin') {
@@ -116,26 +113,10 @@ function renderAvatar(img, email) {
 }
 
 function renderSidebarUser(profile) {
-  if (!profile) {
-    // Unauthenticated — show login button, hide user info.
-    els.avatar.hidden = true;
-    els.email.textContent = '';
-    els.role.textContent = '';
-    els.role.className = 'badge';
-    els.login.hidden = false;
-    els.logout.hidden = true;
-    els.logout.classList.remove('sidebar-logout-last');
-    els.login.classList.add('sidebar-logout-last');
-    return;
-  }
   els.email.textContent = profile.email;
   els.role.textContent = profile.role;
   els.role.className = 'badge ' + profile.role;
   renderAvatar(els.avatar, profile.email);
-  els.login.hidden = true;
-  els.logout.hidden = false;
-  els.login.classList.remove('sidebar-logout-last');
-  els.logout.classList.add('sidebar-logout-last');
 }
 
 bootstrap();

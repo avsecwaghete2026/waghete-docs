@@ -250,26 +250,8 @@ main {
   min-height: var(--tap-min);
 }
 .sidebar-logout:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
-.sidebar-login {
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  padding: 0.4rem 0.7rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: var(--c-text);
-  font-weight: 500;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
-  min-height: var(--tap-min);
-}
-.sidebar-login:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
 
-/* Add a little breathing room when the button is the last item in the
-   user block so it doesn't crowd the edge. */
+/* Add a little breathing room to the user block edge. */
 .sidebar-logout-last { margin-top: 0.35rem; }
 
 /* =====================================================================

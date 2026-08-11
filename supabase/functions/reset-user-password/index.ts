@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
   }
 
   // 4. Update the auth user's password.
-  const { error: updateErr } = await admin.auth.admin.updateUser(target.id, {
+  const { error: updateErr } = await admin.auth.admin.updateUserById(target.id, {
     password: newPassword,
   });
 
