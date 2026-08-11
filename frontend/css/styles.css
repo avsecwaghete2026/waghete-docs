@@ -1249,55 +1249,81 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   .admin-card { padding: 1rem; }
   .admin-card h2 { font-size: 0.85rem; }
 
-  /* ----- Modals: take nearly the full viewport on phones, and push
-     the close button into the top-right corner where the thumb can
-     reach it. Sidebar/preview already stack at 800px. */
+  /* ----- Modals: full-screen on phones, sidebar/preview stack vertically.
+     Override the base .modal { display:grid } and .modal-panel { display:grid }
+     with flex-column so sidebar is compact on top and preview takes all
+     remaining space — no grid quirks, no phantom gaps. ----- */
+  .modal {
+    display: flex !important;
+    align-items: stretch;
+    justify-content: stretch;
+  }
   .modal-panel {
+    display: flex !important;
+    flex-direction: column;
     width: 100vw;
     height: 100vh;
-    height: 100dvh; /* dynamic viewport height — accounts for the
-                       mobile URL bar collapsing/expanding */
+    height: 100dvh;
     max-height: none;
     max-width: none;
     border-radius: 0;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    overflow: hidden;
+    position: relative;
   }
+
+  /* Close button sits fixed top-right of the modal panel */
+  .modal-close {
+    position: fixed;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Sidebar: compact strip at the top, scrolls internally if needed */
   .detail-sidebar {
+    flex-shrink: 0;
+    width: 100%;
     border-right: 0;
     border-bottom: 1px solid var(--c-border);
-    max-height: 40%;
+    max-height: none;
+    height: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .detail-preview {
-    min-height: 0;
-    flex: 1;
+  .detail-sidebar-inner {
+    padding: 1rem;
   }
+  .detail-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+  }
+  .detail-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Preview: takes ALL remaining space below the sidebar */
+  .detail-preview {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .preview-host {
+    padding: 0;
+  }
+
+  /* Edit modal: full-screen form */
   .modal-panel-edit {
     width: 100vw;
-    height: auto;
-    max-height: 100vh;
-    max-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
     border-radius: 0;
     margin: 0;
   }
-  .modal-close {
-    width: 44px;
-    height: 44px;
-    top: 0.5rem;
-    right: 0.5rem;
-    /* Bigger hit area without changing the visible circle. */
-  }
-
-  /* Detail sidebar should scroll internally on phones. The 40% cap
-     keeps the preview visible; min-height:0 + overflow-y:auto means
-     long metadata is reachable by scrolling, not silently clipped. */
-
-  /* Edit modal: drop the inner padding and let the form breathe. */
-  #edit-form { padding: 0.75rem 1rem 1rem; }
-  .edit-modal-title { padding: 1rem 1rem 0.5rem; }
-  .edit-modal-actions { flex-wrap: wrap; }
-  .edit-modal-actions .icon-btn { flex: 1; min-height: var(--tap-min); }
 
   /* ----- File inputs are awkward on mobile; give them a bit of room. */
   input[type="file"] { font-size: 14px; }
