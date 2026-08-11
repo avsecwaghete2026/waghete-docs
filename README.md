@@ -137,6 +137,40 @@ app instead of `localhost:3000`. If your Site URL is left as a local
 address, the magic link in the recovery email will fail to land on a
 working page.
 
+### 8. Connect Resend for transactional email (recommended)
+
+Supabase's built-in email sender has low rate limits (2–4 emails/hour)
+and often lands in spam. Resend gives you 3,000 free emails/month with
+proper deliverability. Here's how to wire it up.
+
+#### In the Supabase dashboard
+
+1. Go to **Authentication → Providers → Email**.
+2. Enable **Custom SMTP**.
+3. Fill in the fields:
+   - **SMTP Host**: `smtp.resend.com`
+   - **SMTP Port**: `465`
+   - **SMTP User**: your Resend API key (format: `re_xxxx`)
+   - **SMTP Password**: your Resend API key (same value)
+   - **Sender Email**: your verified sending domain (e.g. `noreply@yourdomain.com`)
+   - **Sender Name**: `Waghete Docs` (or your preferred name)
+4. Save.
+
+#### In Resend
+
+1. Create an account at [resend.com](https://resend.com).
+2. Add and verify a domain (Resend → **Domains** → Add). You need access
+   to the domain's DNS to add the TXT/MX/SPF records. Without domain
+   verification, Resend only lets you send to the account owner's email.
+3. Once verified, go to **API Keys** and create a key with "Sending"
+   permissions. Copy it.
+4. Paste the API key into the Supabase SMTP fields above.
+
+That's it — Supabase now sends all auth emails (sign-in confirmations,
+password recovery, email change confirmations) through Resend. The rate
+limit jumps to 3,000 emails/month and delivery rates are much better
+than the default.
+
 ## Local dev
 
 Serve the `frontend/` folder with any static server:

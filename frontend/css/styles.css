@@ -250,6 +250,27 @@ main {
   min-height: var(--tap-min);
 }
 .sidebar-logout:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
+.sidebar-login {
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--c-text);
+  font-weight: 500;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: var(--tap-min);
+}
+.sidebar-login:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
+
+/* Add a little breathing room when the button is the last item in the
+   user block so it doesn't crowd the edge. */
+.sidebar-logout-last { margin-top: 0.35rem; }
 
 /* =====================================================================
    Tabs (used in sidebar)
@@ -411,13 +432,39 @@ main {
 }
 .form-row-link:hover { text-decoration: underline; }
 
-/* Form actions: right-aligned row for the primary submit button. */
+/* Form actions: right-aligned row for the primary submit button.
+   .form-actions-between splits the row so the first child hugs the
+   left edge and the last child hugs the right edge — used when a
+   "Back" link sits next to the "Send" button. */
 .form-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 1.25rem;
+  gap: 0.75rem;
+}
+.form-actions-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.25rem;
 }
 .form-actions form button { margin-top: 0; }
+
+/* Text button: looks like a link but has button-sized tap target.
+   Used for "Back to sign in" alongside a primary button. */
+.text-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s;
+  min-height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+}
+.text-btn:hover { color: var(--c-text); text-decoration: underline; }
 
 /* =====================================================================
    Forms
@@ -826,13 +873,14 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
 .modal-panel {
   position: relative;
   width: min(1100px, 96vw);
-  height: min(82vh, 820px);
+  height: min(92dvh, 860px);
   background: var(--c-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: 1fr;
   animation: panelIn 0.18s ease-out;
 }
 @keyframes panelIn {
@@ -1063,19 +1111,43 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
    we target up to 640px to also catch split-screen tablets in portrait.
    ===================================================================== */
 @media (max-width: 640px) {
-  /* ----- App shell: sidebar collapses by default on phones, and the
-     content area takes the full width. The floating hamburger is always
-     on top so the user can re-open the sidebar. ----- */
+  /* ----- App shell: sidebar is fully collapsed by default on phones,
+     taking no width. The floating hamburger (outside the sidebar, fixed
+     top-left) is the only visible element. ----- */
   .app-shell { grid-template-columns: 0 1fr; }
   .app-shell:has(.sidebar.collapsed) { grid-template-columns: 0 1fr; }
-  /* Tighter outer padding everywhere — 1rem instead of 1.5rem frees
-     enough room on a 360px viewport for inputs and cards. */
-  main { padding: 1rem 0.75rem 2rem; }
 
-  /* ----- Sidebar: when open on a phone, take full width so it's still
-     usable; the toggle re-collapses it. ----- */
-  .sidebar { width: 80vw; max-width: 320px; }
-  .sidebar:not(.collapsed) { box-shadow: var(--shadow-lg); }
+  /* When the sidebar is open on a phone, it slides out as a left drawer
+     that exactly fills the viewport height and is narrow enough to leave
+     the content area visible. */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: 0;
+    border-right: 0;
+    z-index: 30;
+    transition: width 0.2s ease;
+    box-shadow: none;
+  }
+  .sidebar:not(.collapsed) {
+    width: 260px;
+    border-right: 1px solid var(--c-border);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* The floating hamburger stays top-left and works regardless of sidebar
+     state. Bump it down a bit so it clears the top browser bar. */
+  .sidebar-toggle {
+    top: 0.65rem;
+    left: 0.65rem;
+    z-index: 40;
+  }
+
+  /* Tighter outer padding for the content area. */
+  main { padding: 1rem 0.75rem 2rem; }
 
   /* ----- Auth card: full-width on phones, with safe-area insets ----- */
   .auth-body {

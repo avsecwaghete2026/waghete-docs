@@ -300,27 +300,26 @@ export async function deleteUserViaEdgeFn({ userId }) {
 }
 
 // ============================================================
-// password reset (Supabase Auth magic link)
+// password reset (Supabase Auth recovery link)
 // ============================================================
-// 1. requestRecoveryCode(email) — Supabase emails a magic link that
-//    points at <Site URL>/reset-password.html. Clicking the link lands
-//    the user back on this app with #access_token in the URL hash.
-// 2. The reset-password page reads that hash on load and uses the
-//    session tokens to call updateOwnPassword() — no separate verify
-//    step is needed because the magic link IS the verification.
+// 1. requestRecoveryCode(email) — calls resetPasswordForEmail, which
+//    sends the "Reset Password" email template with a link pointing at
+//    <Site URL>/<redirectTo>. Clicking the link lands the user on this
+//    app with #access_token in the URL hash (PKCE flow).
+// 2. The reset-password page reads that hash on load, calls setSession
+//    to establish the recovery session, then shows the new-password
+//    form. updateOwnPassword() uses that session to write the new
+//    password, then we sign out and redirect to login.
 //
-// Site URL must be set in the Supabase dashboard (Authentication → URL
-// Configuration) to the production origin, otherwise the email link
-// points at localhost and silently breaks. See README.
+// IMPORTANT: the Supabase project's Site URL (Authentication → URL
+// Configuration) must be set to https://waghete-docs.pages.dev,
+// otherwise the email's link points at localhost:3000 and silently
+// breaks. The redirectTo below is honored when set, but the Site URL
+// is the source of truth for email templates.
 
 export async function requestRecoveryCode(email) {
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    shouldCreateUser: false,
-    // Explicit redirect so the magic link lands here even when the
-    // dashboard's Site URL is set to a different origin. The page at
-    // this URL parses the hash and finishes the flow.
-    options: { emailRedirectTo: `${window.location.origin}/reset-password.html` },
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password.html`,
   });
   if (error) throw error;
 }

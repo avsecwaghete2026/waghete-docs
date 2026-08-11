@@ -131,7 +131,14 @@ requestForm.addEventListener('submit', async (ev) => {
     // could re-use it later without the user retyping.
     stepEl('reset-email').value = email;
   } catch (e) {
-    showError(requestForm, e.message || 'Could not send recovery link.');
+    // Supabase rate-limits recovery emails to ~4/hour per email.
+    // Translate the cryptic 429 into a friendlier hint.
+    const msg = String(e?.message || e || '');
+    if (/rate|over_email_send_rate_limit|429/i.test(msg)) {
+      showError(requestForm, 'Too many recovery emails sent. Wait an hour and try again.');
+    } else {
+      showError(requestForm, msg || 'Could not send recovery link.');
+    }
   } finally {
     setBusy(requestForm, false);
   }
