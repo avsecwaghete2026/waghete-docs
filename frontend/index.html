@@ -38,19 +38,20 @@
 </head>
 <body>
   <div class="app-shell">
+  <!-- The hamburger toggle lives OUTSIDE the sidebar so it stays
+       visible when the sidebar is fully hidden. -->
+  <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+
   <!-- ============================================================
-       Sidebar — logo at top, page nav (Library / Admin), user block
-       pinned at the bottom. Collapsed via the hamburger button into a
-       narrow rail that only shows the icons.
+       Sidebar — logo + nav (Library / Admin) + user block at bottom.
+       Hidden by default; toggled by the hamburger button.
        ============================================================ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-top">
-      <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
       <div class="sidebar-brand">
         <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
-        <span class="sidebar-brand-name">Document Search</span>
       </div>
     </div>
 

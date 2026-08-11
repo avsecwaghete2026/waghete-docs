@@ -42,10 +42,10 @@
   /* Min tap target. Apple's HIG and Material both recommend ~44–48px. */
   --tap-min: 44px;
 
-  /* Sidebar width. The collapsed state is a narrow rail showing only
-     icons — enough room for the hamburger + nav icons + avatar. */
+  /* Sidebar width. When collapsed, the column drops to 0 so the
+     sidebar is fully out of the layout — only the floating hamburger
+     remains visible. */
   --sidebar-w:        240px;
-  --sidebar-collapsed: 64px;
 }
 
 /* =====================================================================
@@ -73,7 +73,9 @@ h2 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
 .hidden { display: none !important; }
 
 /* =====================================================================
-   App shell: sidebar (left, fixed) + main content (right, scrollable)
+   App shell: sidebar (left, hidden when collapsed) + main content
+   The hamburger button is a sibling of the sidebar inside .app-shell,
+   positioned in the top-left so it stays visible regardless of state.
    ===================================================================== */
 .app-shell {
   display: grid;
@@ -81,8 +83,10 @@ h2 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
   min-height: 100vh;
   transition: grid-template-columns 0.2s ease;
 }
+/* When collapsed, the sidebar takes 0 width — fully out of the flow,
+   so only the floating hamburger remains visible. */
 .app-shell:has(.sidebar.collapsed) {
-  grid-template-columns: var(--sidebar-collapsed) 1fr;
+  grid-template-columns: 0 1fr;
 }
 
 main {
@@ -110,10 +114,10 @@ main {
 
 /* =====================================================================
    Sidebar
-   - Full-width when expanded, narrow rail when collapsed.
-   - Brand row at the top, nav in the middle, user block pinned bottom.
-   - All labels (`.tab-label`) get hidden in the collapsed state via
-     `display: none` so only icons remain visible.
+   - Full-width when expanded; completely hidden (width 0) when
+     collapsed. The hamburger (outside the sidebar) stays in place.
+   - Brand row at the top (logo only, no text), nav in the middle,
+     user block pinned bottom.
    ===================================================================== */
 .sidebar {
   position: sticky;
@@ -124,22 +128,46 @@ main {
   background: var(--c-surface);
   border-right: 1px solid var(--c-border);
   overflow: hidden;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, border-color 0.2s ease;
+  width: var(--sidebar-w);
 }
+/* Collapsed sidebar: take no width, drop the border. The toggle button
+   outside the sidebar remains visible. */
+.sidebar.collapsed {
+  width: 0;
+  border-right: 0;
+}
+
 .sidebar-top {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+  padding: 0.75rem 0.75rem;
   border-bottom: 1px solid var(--c-border-soft);
   flex-shrink: 0;
   min-height: var(--tap-min);
 }
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 44px; /* room for the floating hamburger that overlays the brand row */
+}
+.nav-logo { height: 32px; width: auto; display: block; flex-shrink: 0; }
+
+/* Floating hamburger — fixed in the top-left of the viewport, ALWAYS
+   visible (even when the sidebar is hidden). Clicking it toggles the
+   sidebar via the .collapsed class. */
 .sidebar-toggle {
+  position: fixed;
+  top: 0.65rem;
+  left: 0.65rem;
   width: 40px;
   height: 40px;
   border: 0;
-  background: transparent;
+  background: var(--c-surface);
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--c-text-muted);
@@ -147,31 +175,11 @@ main {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  z-index: 20;
+  box-shadow: var(--shadow-sm);
   transition: background 0.15s, color 0.15s;
 }
 .sidebar-toggle:hover { background: var(--c-surface-alt); color: var(--c-text); }
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 0;
-  overflow: hidden;
-}
-.nav-logo { height: 32px; width: auto; display: block; flex-shrink: 0; }
-.sidebar-brand-name {
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 1;
-  transition: opacity 0.15s;
-}
-
-/* When collapsed, hide the text label and center the icon-only toggle. */
-.sidebar.collapsed .sidebar-brand-name { opacity: 0; pointer-events: none; }
-.sidebar.collapsed .sidebar-top { justify-content: center; padding: 0.75rem 0; }
 
 .sidebar-nav {
   display: flex;
@@ -189,10 +197,6 @@ main {
   gap: 0.7rem;
   font-size: 13px;
   border-radius: var(--radius-sm);
-}
-.sidebar.collapsed .sidebar-nav .tab {
-  justify-content: center;
-  padding: 0.6rem 0;
 }
 
 .sidebar-user {
@@ -246,17 +250,6 @@ main {
   min-height: var(--tap-min);
 }
 .sidebar-logout:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
-
-/* Collapsed: hide the text & email block, leave just the avatar + icon-only logout. */
-.sidebar.collapsed .sidebar-user { padding: 0.75rem 0; justify-content: center; }
-.sidebar.collapsed .sidebar-user-text,
-.sidebar.collapsed .sidebar-logout .tab-label { display: none; }
-.sidebar.collapsed .sidebar-logout {
-  padding: 0.4rem;
-  width: 40px;
-  height: 40px;
-  justify-content: center;
-}
 
 /* =====================================================================
    Tabs (used in sidebar)
@@ -396,6 +389,35 @@ main {
   font-weight: 500;
 }
 .auth-footer a:hover { text-decoration: underline; }
+
+/* Form row: label on the left, small inline action (link) on the right.
+   Used in the login form for the Password label + Forgot password? link. */
+.form-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+/* When .form-row wraps a form <label>, neutralize the default label
+   margin so the row is the spacing unit. */
+.form-row label { margin: 0; }
+.form-row-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.form-row-link:hover { text-decoration: underline; }
+
+/* Form actions: right-aligned row for the primary submit button. */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+.form-actions form button { margin-top: 0; }
 
 /* =====================================================================
    Forms
@@ -1051,15 +1073,18 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
    ===================================================================== */
 @media (max-width: 640px) {
   /* ----- App shell: sidebar collapses by default on phones, and the
-     content area takes the full width. ----- */
-  .app-shell { grid-template-columns: var(--sidebar-collapsed) 1fr; }
-  .app-shell:has(.sidebar.collapsed) { grid-template-columns: var(--sidebar-collapsed) 1fr; }
+     content area takes the full width. The floating hamburger is always
+     on top so the user can re-open the sidebar. ----- */
+  .app-shell { grid-template-columns: 0 1fr; }
+  .app-shell:has(.sidebar.collapsed) { grid-template-columns: 0 1fr; }
   /* Tighter outer padding everywhere — 1rem instead of 1.5rem frees
      enough room on a 360px viewport for inputs and cards. */
   main { padding: 1rem 0.75rem 2rem; }
 
-  /* ----- Sidebar: narrower padding, hide labels ----- */
-  .sidebar-user { padding: 0.5rem; gap: 0.4rem; }
+  /* ----- Sidebar: when open on a phone, take full width so it's still
+     usable; the toggle re-collapses it. ----- */
+  .sidebar { width: 80vw; max-width: 320px; }
+  .sidebar:not(.collapsed) { box-shadow: var(--shadow-lg); }
 
   /* ----- Auth card: full-width on phones, with safe-area insets ----- */
   .auth-body {
