@@ -38,6 +38,12 @@ export async function initDetail() {
     previewHost:  document.getElementById('detail-preview-host'),
   });
 
+  // Defensive: hide admin-only buttons immediately for non-admins.
+  if (!isAdmin()) {
+    els.edit.hidden     = true;
+    els.deleteBtn.hidden = true;
+  }
+
   els.modal.addEventListener('click', (ev) => {
     if (ev.target.dataset.close !== undefined) close();
   });

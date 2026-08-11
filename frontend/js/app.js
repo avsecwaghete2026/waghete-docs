@@ -66,9 +66,10 @@ async function bootstrap() {
   // Show login button for unauthenticated visitors (if they somehow reach index.html).
   // No login button in sidebar — they go directly to the login page.
 
-  // Show admin tab only for admins.
+  // Show admin tab only for admins. Also re-hide it unconditionally here
+  // so any stale hidden-attribute override from CSS cascade is corrected.
+  els.adminTab.hidden = profile.role !== 'admin';
   if (profile.role === 'admin') {
-    els.adminTab.hidden = false;
     await initAdmin();
   }
 

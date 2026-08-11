@@ -848,7 +848,7 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   display: grid;
   place-items: center;
 }
-.modal[hidden] { display: none; }
+.modal[hidden] { display: none !important; }
 
 .modal-backdrop {
   position: absolute;
@@ -1263,7 +1263,8 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
      with flex so the detail modal's sidebar sits compact on top and the
      preview fills all remaining space. The close button lives inside the
      panel as a normal child so overflow clipping never hides it. ----- */
-  .modal {
+  .modal[hidden] { display: none !important; }
+  .modal:not([hidden]) {
     display: flex !important;
     align-items: stretch !important;
     justify-content: stretch !important;
