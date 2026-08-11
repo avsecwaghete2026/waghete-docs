@@ -45,7 +45,7 @@
   /* Sidebar width. When collapsed, the column drops to 0 so the
      sidebar is fully out of the layout — only the floating hamburger
      remains visible. */
-  --sidebar-w:        240px;
+  --sidebar-w:        220px;
 }
 
 /* =====================================================================
@@ -1083,9 +1083,18 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
     height: 92vh;
+    max-height: 92vh;
   }
-  .detail-sidebar { border-right: 0; border-bottom: 1px solid var(--c-border); max-height: 40%; }
+  .detail-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--c-border);
+    max-height: 40%;
+  }
   .detail-sidebar-inner { padding: 1.25rem 1rem; }
+  .detail-preview {
+    min-height: 0;
+    flex: 1;
+  }
 }
 
 /* =====================================================================
@@ -1096,12 +1105,15 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   /* ----- App shell: sidebar is fully collapsed by default on phones,
      taking no width. The floating hamburger (outside the sidebar, fixed
      top-left) is the only visible element. ----- */
-  .app-shell { grid-template-columns: 0 1fr; }
-  .app-shell:has(.sidebar.collapsed) { grid-template-columns: 0 1fr; }
+  .app-shell {
+    grid-template-columns: 1fr;
+    transition: grid-template-columns 0.2s ease;
+  }
+  .app-shell:has(.sidebar.collapsed) {
+    grid-template-columns: 1fr;
+  }
 
-  /* When the sidebar is open on a phone, it slides out as a left drawer
-     that exactly fills the viewport height and is narrow enough to leave
-     the content area visible. */
+  /* When the sidebar is open on a phone, it slides out as a left drawer. */
   .sidebar {
     position: fixed;
     top: 0;
@@ -1115,10 +1127,28 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
     box-shadow: none;
   }
   .sidebar:not(.collapsed) {
-    width: 260px;
+    width: 220px;
     border-right: 1px solid var(--c-border);
     box-shadow: var(--shadow-lg);
   }
+
+  /* Sidebar user block: stack avatar+text, logout goes below. */
+  .sidebar-user {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    overflow: visible;
+  }
+  .sidebar-user-text {
+    width: 100%;
+  }
+  .sidebar-logout {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 0.25rem;
+  }
+  .sidebar-logout-last { margin-top: 0.25rem; }
+  .sidebar-logout .tab-label { display: inline; }
 
   /* The floating hamburger stays top-left and works regardless of sidebar
      state. Bump it down a bit so it clears the top browser bar. */
@@ -1230,6 +1260,18 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
     max-height: none;
     max-width: none;
     border-radius: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .detail-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--c-border);
+    max-height: 40%;
+    -webkit-overflow-scrolling: touch;
+  }
+  .detail-preview {
+    min-height: 0;
+    flex: 1;
   }
   .modal-panel-edit {
     width: 100vw;
@@ -1247,13 +1289,9 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
     /* Bigger hit area without changing the visible circle. */
   }
 
-  /* Detail sidebar should scroll internally on phones. The 50% cap
+  /* Detail sidebar should scroll internally on phones. The 40% cap
      keeps the preview visible; min-height:0 + overflow-y:auto means
      long metadata is reachable by scrolling, not silently clipped. */
-  .detail-sidebar {
-    max-height: 50%;
-    -webkit-overflow-scrolling: touch;
-  }
 
   /* Edit modal: drop the inner padding and let the form breathe. */
   #edit-form { padding: 0.75rem 1rem 1rem; }
