@@ -300,34 +300,29 @@ export async function deleteUserViaEdgeFn({ userId }) {
 }
 
 // ============================================================
-// password reset (Supabase Auth recovery code)
+// password reset (Supabase Auth magic link)
 // ============================================================
-// 1. requestRecoveryCode(email) — Supabase sends a 6-digit code to the
-//    user's inbox.
-// 2. verifyRecoveryCode(email, code) — exchange the code for a session.
-// 3. updateOwnPassword(newPassword) — set the new password while the
-//    session is active. Sign out afterward so the user lands back on
-//    the login screen.
+// 1. requestRecoveryCode(email) — Supabase emails a magic link that
+//    points at <Site URL>/reset-password.html. Clicking the link lands
+//    the user back on this app with #access_token in the URL hash.
+// 2. The reset-password page reads that hash on load and uses the
+//    session tokens to call updateOwnPassword() — no separate verify
+//    step is needed because the magic link IS the verification.
+//
+// Site URL must be set in the Supabase dashboard (Authentication → URL
+// Configuration) to the production origin, otherwise the email link
+// points at localhost and silently breaks. See README.
 
 export async function requestRecoveryCode(email) {
-  // Supabase sends to the email via its built-in OTP flow. We redirect
-  // back to this same page; the verify step below uses the
-  // signInWithOtp verification code rather than the link.
   const { error } = await supabase.auth.signInWithOtp({
     email,
     shouldCreateUser: false,
+    // Explicit redirect so the magic link lands here even when the
+    // dashboard's Site URL is set to a different origin. The page at
+    // this URL parses the hash and finishes the flow.
+    options: { emailRedirectTo: `${window.location.origin}/reset-password.html` },
   });
   if (error) throw error;
-}
-
-export async function verifyRecoveryCode(email, code) {
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token: code,
-    type: 'email',
-  });
-  if (error) throw error;
-  return data;
 }
 
 export async function updateOwnPassword(newPassword) {

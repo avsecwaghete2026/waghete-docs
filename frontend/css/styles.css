@@ -456,15 +456,6 @@ form input:focus, form select:focus,
 }
 form input::placeholder { color: var(--c-text-soft); }
 
-/* make the recovery code input look like a code field */
-#reset-code {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 22px;
-  letter-spacing: 0.35em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
 /* Primary button */
 form button {
   margin-top: 1.25rem;

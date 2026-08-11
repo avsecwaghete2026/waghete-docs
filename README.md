@@ -127,11 +127,15 @@ app scripts load.
 
 Dashboard → **Authentication → URL Configuration**:
 
-- **Site URL**: `https://<your-pages-domain>` (e.g. `https://doc-search.pages.dev`)
+- **Site URL**: `https://<your-pages-domain>` (e.g. `https://waghete-docs.pages.dev`)
 - **Redirect URLs**: add the same domain (and `http://localhost:8080` if
   you serve locally for testing).
 
-This stops the dreaded "redirect URL not allowed" error after sign-in.
+This stops the dreaded "redirect URL not allowed" error after sign-in
+AND makes sure the password-recovery email links point at the deployed
+app instead of `localhost:3000`. If your Site URL is left as a local
+address, the magic link in the recovery email will fail to land on a
+working page.
 
 ## Local dev
 
