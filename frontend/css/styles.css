@@ -199,14 +199,22 @@ main {
   border-radius: var(--radius-sm);
 }
 
+/* Sidebar user block: avatar + text side-by-side on desktop, full-width
+   logout button on its own row below. */
 .sidebar-user {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem 0.75rem;
   border-top: 1px solid var(--c-border-soft);
   flex-shrink: 0;
   background: var(--c-surface-alt);
+  overflow: hidden;
+}
+.sidebar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   overflow: hidden;
 }
 .sidebar-user-text {
@@ -248,11 +256,10 @@ main {
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s;
   min-height: var(--tap-min);
+  width: 100%;
+  justify-content: flex-start;
 }
 .sidebar-logout:hover { background: var(--c-surface-alt); border-color: #cbd5e1; }
-
-/* Add a little breathing room to the user block edge. */
-.sidebar-logout-last { margin-top: 0.35rem; }
 
 /* =====================================================================
    Tabs (used in sidebar)
@@ -1132,22 +1139,24 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
     box-shadow: var(--shadow-lg);
   }
 
-  /* Sidebar user block: stack avatar+text, logout goes below. */
+  /* Sidebar user block: logout is already its own row; tidy up spacing. */
   .sidebar-user {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
     overflow: visible;
   }
-  .sidebar-user-text {
+  .sidebar-user-info {
     width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
   }
   .sidebar-logout {
     width: 100%;
     justify-content: flex-start;
-    margin-top: 0.25rem;
+    margin-top: 0.1rem;
   }
-  .sidebar-logout-last { margin-top: 0.25rem; }
   .sidebar-logout .tab-label { display: inline; }
 
   /* The floating hamburger stays top-left and works regardless of sidebar
@@ -1337,6 +1346,8 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   /* ----- File inputs are awkward on mobile; give them a bit of room. */
   input[type="file"] { font-size: 14px; }
 }
+
+.modal[hidden] { display: none !important; }
 
 /* Stop hover-only affordances from sticking under the finger on touch
    devices (a tap on a "hover" background looks stuck until you tap
