@@ -113,9 +113,10 @@ function renderAvatar(img, email) {
 }
 
 function renderSidebarUser(profile) {
+  const role = profile.role === 'admin' ? 'admin' : 'viewer';
   els.email.textContent = profile.email;
-  els.role.textContent = profile.role;
-  els.role.className = 'badge ' + profile.role;
+  els.role.textContent = role;
+  els.role.className = 'badge ' + role;
   renderAvatar(els.avatar, profile.email);
 }
 

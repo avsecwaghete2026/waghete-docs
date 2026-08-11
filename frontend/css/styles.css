@@ -1250,80 +1250,89 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   .admin-card h2 { font-size: 0.85rem; }
 
   /* ----- Modals: full-screen on phones, sidebar/preview stack vertically.
-     Override the base .modal { display:grid } and .modal-panel { display:grid }
-     with flex-column so sidebar is compact on top and preview takes all
-     remaining space — no grid quirks, no phantom gaps. ----- */
+     Override base .modal { display:grid } and .modal-panel { display:grid }
+     with flex so the detail modal's sidebar sits compact on top and the
+     preview fills all remaining space. The close button lives inside the
+     panel as a normal child so overflow clipping never hides it. ----- */
   .modal {
     display: flex !important;
-    align-items: stretch;
-    justify-content: stretch;
+    align-items: stretch !important;
+    justify-content: stretch !important;
   }
   .modal-panel {
     display: flex !important;
-    flex-direction: column;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
-    max-width: none;
-    border-radius: 0;
-    overflow: hidden;
-    position: relative;
+    flex-direction: column !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    /* No overflow:hidden — let children be visible; close button is
+       position:absolute relative to this panel, not fixed to viewport. */
   }
 
-  /* Close button sits fixed top-right of the modal panel */
+  /* Close button: absolute inside the panel, top-right corner */
   .modal-close {
-    position: fixed;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 10;
-    width: 44px;
-    height: 44px;
+    position: absolute !important;
+    top: 0.6rem !important;
+    right: 0.75rem !important;
+    z-index: 5 !important;
+    width: 36px !important;
+    height: 36px !important;
   }
 
-  /* Sidebar: compact strip at the top, scrolls internally if needed */
+  /* Detail modal: sidebar compact on top, preview fills remaining space */
   .detail-sidebar {
-    flex-shrink: 0;
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid var(--c-border);
-    max-height: none;
-    height: auto;
-    overflow-y: auto;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--c-border) !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
   }
   .detail-sidebar-inner {
-    padding: 1rem;
+    padding: 1rem !important;
   }
   .detail-meta {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1rem;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem 1rem !important;
   }
   .detail-actions {
-    flex-wrap: wrap;
+    flex-wrap: wrap !important;
   }
 
-  /* Preview: takes ALL remaining space below the sidebar */
+  /* Preview takes ALL remaining space below the sidebar */
   .detail-preview {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
     -webkit-overflow-scrolling: touch;
   }
   .preview-host {
-    padding: 0;
+    flex: 1 !important;
+    padding: 0.75rem !important;
   }
 
-  /* Edit modal: full-screen form */
+  /* Edit modal: full-screen single-column form */
   .modal-panel-edit {
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
-    border-radius: 0;
-    margin: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
+  .edit-modal-title { padding: 1rem 1rem 0.5rem !important; }
+  #edit-form { padding: 0.5rem 1rem 1.5rem !important; }
+  .edit-modal-actions { flex-wrap: wrap !important; }
+  .edit-modal-actions .icon-btn { flex: 1 !important; min-height: var(--tap-min) !important; }
 
   /* ----- File inputs are awkward on mobile; give them a bit of room. */
   input[type="file"] { font-size: 14px; }

@@ -83,8 +83,11 @@ export async function open(id) {
   els.type.textContent     = row.file_type ?? '—';
   els.size.textContent     = row.file_size ? formatBytes(row.file_size) : '—';
 
-  els.edit.hidden       = !isAdmin();
-  els.deleteBtn.hidden  = !isAdmin();
+  // Only show edit/delete for admins. isAdmin() returns true only when
+  // window.__sessionRole__ is explicitly 'admin' (not null/undefined).
+  const isAdminUser = isAdmin();
+  els.edit.hidden       = !isAdminUser;
+  els.deleteBtn.hidden  = !isAdminUser;
 
   els.download.onclick  = () => downloadRow(row);
   els.edit.onclick      = () => {
