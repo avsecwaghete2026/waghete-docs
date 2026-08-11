@@ -10,7 +10,8 @@ backend, no Workers, no D1, no R2 — the browser talks directly to Supabase.
 docsearch-app/
 ├── frontend/                Static site deployed to Cloudflare Pages
 │   ├── login.html           Sign-in page
-│   ├── index.html           App shell (search + admin tabs)
+│   ├── reset-password.html  Forgot-password (code → new password → login)
+│   ├── index.html           App shell (Library sidebar + Admin tab)
 │   ├── css/styles.css
 │   ├── js/
 │   │   ├── config.js                  Reads window.__SUPABASE_URL__ etc.
@@ -19,7 +20,9 @@ docsearch-app/
 │   │   ├── api.js                     documents / categories / users / Edge Fn
 │   │   ├── search.js                  Live search (debounce, AbortController)
 │   │   ├── admin.js                   Upload / edit / categories / users
-│   │   ├── app.js                     Shell + tab switching + bootstrap
+│   │   ├── detail.js                  Document detail modal + preview
+│   │   ├── reset-password.js          Forgot-password flow
+│   │   ├── app.js                     Shell + sidebar toggle + bootstrap
 │   │   └── login.js                   Sign-in form
 │   └── build-config.js                Substitutes env vars into a runtime config
 └── supabase/
@@ -28,8 +31,13 @@ docsearch-app/
     │   ├── 0002_trigger.sql           auto-create profile on auth.users insert
     │   ├── 0003_rls.sql               row-level security policies
     │   ├── 0004_indexes_fts.sql       indexes + tsvector full-text search
-    │   └── 0005_storage.sql           Storage RLS for the documents bucket
-    ├── functions/create-user/         Edge Function for admin user creation
+    │   ├── 0005_storage.sql           Storage RLS for the documents bucket
+    │   ├── 0006_drive.sql             swap Storage for Google Drive
+    │   ├── 0007_soft_delete.sql       deleted_at on documents
+    │   └── 0008_updated_at.sql        updated_at + trigger for documents
+    ├── functions/
+    │   ├── create-user/    Edge Function for admin user creation
+    │   └── delete-user/    Edge Function for admin user removal
     └── scripts/seed-admin.ts          Bootstrap the first admin
 ```
 
@@ -167,17 +175,18 @@ hold the service_role key server-side.
 
 - Text input + tag input are debounced **250 ms** after the last
   keystroke.
-- Category + date range fire immediately on change.
+- Category + date range + sort fire immediately on change.
 - Each query uses an `AbortController` — a newer keystroke supersedes
   any in-flight request, so the UI never flashes stale results.
 - A "Searching…" indicator appears only if a request takes **>200 ms**.
 - Tag filter is **AND-match** — a doc must contain every entered tag.
-- Results are ordered by `upload_date` desc, capped at 100.
+- Sort options: date modified (newest/oldest), date uploaded, name
+  (A→Z / Z→A), file type, file size (largest/smallest). Default is
+  date modified newest first.
+- Results are capped at 100 (300 when a text query is active).
 
 ## Out of scope (easy to add later)
 
-- Forgot-password / password reset (Supabase Auth supports this — just
-  enable it under Authentication → Providers → Email).
 - Email verification (currently bypassed with `email_confirm: true` in
   the seed script and Edge Function).
 - Audit log of downloads.

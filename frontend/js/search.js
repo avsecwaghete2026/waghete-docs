@@ -22,6 +22,7 @@ const els = {
   tag: document.getElementById('search-tag'),
   dateFrom: document.getElementById('search-date-from'),
   dateTo: document.getElementById('search-date-to'),
+  sort: document.getElementById('search-sort'),
   body: document.getElementById('results-body'),
   count: document.getElementById('results-count'),
   loading: document.getElementById('results-loading'),
@@ -51,7 +52,7 @@ export async function initSearch() {
     clearTimeout(textTimer);
     textTimer = setTimeout(runSearch, TEXT_DEBOUNCE_MS);
   });
-  for (const el of [els.category, els.dateFrom, els.dateTo]) {
+  for (const el of [els.category, els.dateFrom, els.dateTo, els.sort]) {
     el.addEventListener('change', runSearch);
   }
   els.tag.addEventListener('input', () => {
@@ -79,6 +80,7 @@ async function runSearch() {
       tags: parseTags(els.tag.value),
       dateFrom: els.dateFrom.value,
       dateTo: els.dateTo.value,
+      sort: els.sort.value,
       signal: controller.signal,
     });
     // If another search started after we fired, abort() above will have
@@ -88,7 +90,7 @@ async function runSearch() {
   } catch (e) {
     if (e?.code === 'aborted') return; // superseded — silent
     console.error(e);
-    els.body.innerHTML = `<tr><td colspan="6"><div class="empty-state error">Search failed.</div></td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="7"><div class="empty-state error">Search failed.</div></td></tr>`;
   } finally {
     clearTimeout(slowTimer);
     els.loading.hidden = true;
@@ -102,7 +104,7 @@ function renderResults(rows) {
     : `${rows.length} result${rows.length === 1 ? '' : 's'}.`;
 
   if (rows.length === 0) {
-    els.body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⌕</div>No documents match your filters.</div></td></tr>`;
+    els.body.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⌕</div>No documents match your filters.</div></td></tr>`;
     return;
   }
 
@@ -113,6 +115,7 @@ function renderResults(rows) {
       <td data-label="Category">${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
       <td data-label="Tags">${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
       <td data-label="Uploaded">${formatDate(r.upload_date)}</td>
+      <td data-label="Modified">${formatDate(r.updated_at)}</td>
       <td data-label="By">${escapeHtml(r.profiles?.email ?? '')}</td>
       <td class="actions" data-label="Actions">
         <button type="button" class="icon-btn primary" data-action="download">

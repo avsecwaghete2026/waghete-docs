@@ -9,6 +9,7 @@ import {
   deleteCategory,
   listUsers,
   createUserViaEdgeFn,
+  deleteUserViaEdgeFn,
   parseTags,
 } from './api.js';
 import { getSession } from './auth.js';
@@ -65,6 +66,10 @@ export async function initAdmin() {
   els.uploadForm.addEventListener('submit', onUpload);
   els.editForm.addEventListener('submit', onEdit);
   els.userForm.addEventListener('submit', onCreateUser);
+  els.usersBody.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-action="remove-user"]');
+    if (btn && !btn.disabled) onRemoveUser(btn);
+  });
 
   window.addEventListener('docsearch:edit', (ev) => {
     openEditModal(ev.detail?.id);
@@ -343,15 +348,46 @@ async function onEdit(ev) {
 async function renderUserList() {
   try {
     const users = await listUsers();
-    els.usersBody.innerHTML = users.map((u) => `
-      <tr>
-        <td class="title-cell">${escHtml(u.email)}</td>
+    const session = await getSession();
+    const selfId = session?.user?.id;
+    els.usersBody.innerHTML = users.map((u) => {
+      const isSelf = u.id === selfId;
+      return `
+      <tr data-user-id="${escAttr(u.id)}">
+        <td class="title-cell">${escHtml(u.email)}${isSelf ? ' <span class="muted">(you)</span>' : ''}</td>
         <td><span class="badge ${u.role}">${u.role}</span></td>
         <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</td>
+        <td class="actions">
+          <button type="button" class="icon-btn danger" data-action="remove-user" ${isSelf ? 'disabled title="You cannot remove your own account"' : ''}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Remove
+          </button>
+        </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   } catch (e) {
-    els.usersBody.innerHTML = `<tr><td colspan="3"><div class="empty-state error">${escHtml(e.message)}</div></td></tr>`;
+    els.usersBody.innerHTML = `<tr><td colspan="4"><div class="empty-state error">${escHtml(e.message)}</div></td></tr>`;
+  }
+}
+
+async function onRemoveUser(btn) {
+  const tr = btn.closest('tr[data-user-id]');
+  const userId = tr?.dataset.userId;
+  if (!userId) return;
+  const email = tr.querySelector('.title-cell').textContent.replace(/\s*\(you\)\s*$/, '').trim();
+  if (!confirm(`Remove user "${email}"? They will lose access immediately. This cannot be undone.`)) return;
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `${SPINNER_SVG}Removing…`;
+  try {
+    await deleteUserViaEdgeFn({ userId });
+    await renderUserList();
+    showToast(`User "${email}" removed.`, 'success');
+  } catch (e) {
+    showToast(`Remove failed: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
   }
 }
 

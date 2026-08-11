@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Document Search</title>
+  <title>Library — Document Search</title>
   <!-- Hide the shell until app.js confirms a valid session. This stops
        the brief flash of the main screen before the async auth check
        redirects to login. -->
@@ -12,7 +12,7 @@
   <script src="js/config.runtime.js"></script>
   <!-- Synchronous pre-auth check. Runs before the body parses so an
        unauthenticated visitor is bounced to login without ever seeing
-       the navbar/search table. -->
+       the sidebar/search table. -->
   <script>
     (function () {
       var url = (window.__SUPABASE_URL__ || '').replace(/^https?:\/\//, '');
@@ -38,42 +38,85 @@
 </head>
 <body>
   <div class="app-shell">
-  <header class="navbar">
-    <div class="navbar-brand">
-      <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
-    </div>
-    <nav class="navbar-tabs" id="tabs">
-      <button type="button" class="tab active" data-view="search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search
+  <!-- ============================================================
+       Sidebar — logo at top, page nav (Library / Admin), user block
+       pinned at the bottom. Collapsed via the hamburger button into a
+       narrow rail that only shows the icons.
+       ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <button type="button" class="tab" data-view="admin" id="admin-tab" hidden>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Admin
+      <div class="sidebar-brand">
+        <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
+        <span class="sidebar-brand-name">Document Search</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" id="tabs">
+      <button type="button" class="tab active" data-view="search" title="Library">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="tab-label">Library</span>
+      </button>
+      <button type="button" class="tab" data-view="admin" id="admin-tab" hidden title="Admin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span class="tab-label">Admin</span>
       </button>
     </nav>
-    <div class="navbar-user">
+
+    <div class="sidebar-user">
       <img class="user-avatar" id="user-avatar" src="" alt="" hidden />
-      <span id="user-email" class="muted"></span>
-      <span id="user-role" class="badge"></span>
-      <button id="logout-btn" type="button">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Sign out
+      <div class="sidebar-user-text">
+        <span id="user-email" class="sidebar-user-email"></span>
+        <span id="user-role" class="badge"></span>
+      </div>
+      <button id="logout-btn" type="button" class="sidebar-logout" aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="tab-label">Sign out</span>
       </button>
     </div>
-  </header>
+  </aside>
 
   <main>
     <!-- ============================================================
-         SEARCH VIEW (default; visible to all roles)
+         LIBRARY VIEW (default; visible to all roles)
          ============================================================ -->
     <section id="view-search" class="view active">
+      <div class="view-header">
+        <h1>Library</h1>
+        <p class="muted">Search and download company documents.</p>
+      </div>
+
       <div class="search-bar">
         <label for="search-q">Search<input id="search-q" type="search" placeholder="Search documents…" autocomplete="off" /></label>
         <label for="search-category">Category<select id="search-category"><option value="">All categories</option></select></label>
         <label for="search-tag">Tags<input id="search-tag" type="text" placeholder="Tag (comma-separated, AND-match)" /></label>
         <label for="search-date-from">From<input id="search-date-from" type="date" /></label>
         <label for="search-date-to">To<input id="search-date-to" type="date" /></label>
+        <label for="search-sort">Sort by
+          <select id="search-sort">
+            <optgroup label="Date modified">
+              <option value="updated_desc" selected>Newest first</option>
+              <option value="updated_asc">Oldest first</option>
+            </optgroup>
+            <optgroup label="Date uploaded">
+              <option value="uploaded_desc">Newest first</option>
+              <option value="uploaded_asc">Oldest first</option>
+            </optgroup>
+            <optgroup label="Name">
+              <option value="name_asc">A → Z</option>
+              <option value="name_desc">Z → A</option>
+            </optgroup>
+            <optgroup label="Type">
+              <option value="type_asc">File type</option>
+            </optgroup>
+            <optgroup label="Size">
+              <option value="size_desc">Largest first</option>
+              <option value="size_asc">Smallest first</option>
+            </optgroup>
+          </select>
+        </label>
       </div>
 
       <div class="results-meta">
@@ -88,12 +131,13 @@
             <th>Category</th>
             <th>Tags</th>
             <th>Uploaded</th>
+            <th>Modified</th>
             <th>By</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="results-body">
-          <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⌕</div>Type to search.</div></td></tr>
+          <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⌕</div>Type to search.</div></td></tr>
         </tbody>
       </table>
     </section>
@@ -114,6 +158,7 @@
               <dt>Category</dt>     <dd id="detail-category">—</dd>
               <dt>Tags</dt>         <dd id="detail-tags">—</dd>
               <dt>Uploaded</dt>     <dd id="detail-uploaded">—</dd>
+              <dt>Modified</dt>     <dd id="detail-modified">—</dd>
               <dt>By</dt>           <dd id="detail-uploader">—</dd>
               <dt>Type</dt>         <dd id="detail-type">—</dd>
               <dt>Size</dt>         <dd id="detail-size">—</dd>
@@ -199,6 +244,11 @@
          ADMIN VIEW (rendered only when role === 'admin')
          ============================================================ -->
     <section id="view-admin" class="view">
+      <div class="view-header">
+        <h1>Admin</h1>
+        <p class="muted">Upload documents and manage users.</p>
+      </div>
+
       <div class="admin-grid">
         <div class="admin-card">
           <h2>
@@ -257,7 +307,7 @@
             <p id="user-error" class="error" hidden></p>
           </form>
           <table class="results">
-            <thead><tr><th>Email</th><th>Role</th><th>Created</th></tr></thead>
+            <thead><tr><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
             <tbody id="users-body"></tbody>
           </table>
         </div>

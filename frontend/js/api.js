@@ -25,6 +25,7 @@ export async function searchDocuments({
   tags = [],
   dateFrom = '',
   dateTo = '',
+  sort = 'updated_desc',
   signal,
 } = {}) {
   const qTrim = q.trim();
@@ -33,14 +34,30 @@ export async function searchDocuments({
   // across title + category + tags + uploader (PostgREST .or() can't
   // reach joined/nested columns). Keep server-side filters for perf.
   const fetchMore = !!qTrim;
+
+  // Map our sort key → (column, ascending). Falls back to updated_desc
+  // so an unknown key never errors out — the search still runs.
+  const SORT_MAP = {
+    name_asc:      ['title',        true],
+    name_desc:     ['title',        false],
+    updated_desc:  ['updated_at',   false],
+    updated_asc:   ['updated_at',   true],
+    uploaded_desc: ['upload_date',  false],
+    uploaded_asc:  ['upload_date',  true],
+    type_asc:      ['file_type',    true],
+    size_desc:     ['file_size',    false],
+    size_asc:      ['file_size',    true],
+  };
+  const [sortCol, sortAsc] = SORT_MAP[sort] ?? SORT_MAP.updated_desc;
+
   let query = supabase
     .from('documents')
     .select(
-      'id, title, category_id, tags, uploaded_by, upload_date, drive_file_id, file_type, file_size, deleted_at, ' +
+      'id, title, category_id, tags, uploaded_by, upload_date, updated_at, drive_file_id, file_type, file_size, deleted_at, ' +
       'categories(name), profiles!documents_uploaded_by_fkey(email)',
     )
     .is('deleted_at', null)
-    .order('upload_date', { ascending: false })
+    .order(sortCol, { ascending: sortAsc })
     .limit(fetchMore ? 300 : 100);
 
   if (categoryId) query = query.eq('category_id', categoryId);
@@ -269,6 +286,53 @@ export async function createUserViaEdgeFn({ email, password, role }) {
   });
   if (error) throw error;
   return data;
+}
+
+export async function deleteUserViaEdgeFn({ userId }) {
+  const jwt = await getJwt();
+  if (!jwt) throw new Error('Not signed in.');
+  const { data, error } = await supabase.functions.invoke('delete-user', {
+    body: { user_id: userId },
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================
+// password reset (Supabase Auth recovery code)
+// ============================================================
+// 1. requestRecoveryCode(email) — Supabase sends a 6-digit code to the
+//    user's inbox.
+// 2. verifyRecoveryCode(email, code) — exchange the code for a session.
+// 3. updateOwnPassword(newPassword) — set the new password while the
+//    session is active. Sign out afterward so the user lands back on
+//    the login screen.
+
+export async function requestRecoveryCode(email) {
+  // Supabase sends to the email via its built-in OTP flow. We redirect
+  // back to this same page; the verify step below uses the
+  // signInWithOtp verification code rather than the link.
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    shouldCreateUser: false,
+  });
+  if (error) throw error;
+}
+
+export async function verifyRecoveryCode(email, code) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: 'email',
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function updateOwnPassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
 }
 
 // ============================================================

@@ -1,5 +1,5 @@
 // App shell entry: route to login if unauthenticated, otherwise render
-// the navbar (with role badge) and hand off to the search/admin modules.
+// the sidebar (with role badge) and hand off to the search/admin modules.
 
 import { getSession, signOut, ensureRole } from './auth.js';
 import { initSearch } from './search.js';
@@ -7,12 +7,14 @@ import { initAdmin } from './admin.js';
 import { initDetail } from './detail.js';
 
 const els = {
-  email:   document.getElementById('user-email'),
-  avatar:  document.getElementById('user-avatar'),
-  role:    document.getElementById('user-role'),
-  logout:  document.getElementById('logout-btn'),
-  tabs:    document.getElementById('tabs'),
+  email:    document.getElementById('user-email'),
+  avatar:   document.getElementById('user-avatar'),
+  role:     document.getElementById('user-role'),
+  logout:   document.getElementById('logout-btn'),
+  tabs:     document.getElementById('tabs'),
   adminTab: document.getElementById('admin-tab'),
+  sidebar:  document.getElementById('sidebar'),
+  toggle:   document.getElementById('sidebar-toggle'),
   searchView: document.getElementById('view-search'),
   adminView:  document.getElementById('view-admin'),
 };
@@ -38,7 +40,7 @@ async function bootstrap() {
   // hidden to avoid a flash of the main screen on cold load.
   document.documentElement.classList.remove('preauth');
 
-  // Render navbar.
+  // Render sidebar user block.
   els.email.textContent = profile.email;
   els.role.textContent = profile.role;
   els.role.classList.add(profile.role);
@@ -48,6 +50,16 @@ async function bootstrap() {
   for (const tab of els.tabs.querySelectorAll('.tab')) {
     tab.addEventListener('click', () => switchTab(tab.dataset.view));
   }
+
+  // Wire up sidebar collapse. Persist the choice in localStorage so it
+  // sticks across reloads.
+  applySidebarState();
+  els.toggle.addEventListener('click', () => {
+    const collapsed = !els.sidebar.classList.contains('collapsed');
+    els.sidebar.classList.toggle('collapsed', collapsed);
+    els.toggle.setAttribute('aria-expanded', String(!collapsed));
+    try { localStorage.setItem('waghete:sidebar', collapsed ? '1' : '0'); } catch (_) {}
+  });
 
   els.logout.addEventListener('click', async () => {
     await signOut();
@@ -67,6 +79,13 @@ async function bootstrap() {
   window.addEventListener('docsearch:refresh', () => {
     document.getElementById('search-q').dispatchEvent(new Event('input'));
   });
+}
+
+function applySidebarState() {
+  let collapsed = false;
+  try { collapsed = localStorage.getItem('waghete:sidebar') === '1'; } catch (_) {}
+  els.sidebar.classList.toggle('collapsed', collapsed);
+  els.toggle.setAttribute('aria-expanded', String(!collapsed));
 }
 
 function switchTab(view) {

@@ -28,6 +28,7 @@ export async function initDetail() {
     category:     document.getElementById('detail-category'),
     tags:         document.getElementById('detail-tags'),
     uploaded:     document.getElementById('detail-uploaded'),
+    modified:     document.getElementById('detail-modified'),
     uploader:     document.getElementById('detail-uploader'),
     type:         document.getElementById('detail-type'),
     size:         document.getElementById('detail-size'),
@@ -58,7 +59,7 @@ export async function open(id) {
 
   const { data: row, error } = await supabase
     .from('documents')
-    .select('id, title, category_id, tags, drive_file_id, file_type, file_size, upload_date, ' +
+    .select('id, title, category_id, tags, drive_file_id, file_type, file_size, upload_date, updated_at, ' +
             'categories(name), profiles!documents_uploaded_by_fkey(email)')
     .eq('id', id)
     .is('deleted_at', null)
@@ -74,6 +75,9 @@ export async function open(id) {
     : '<span class="muted">—</span>';
   els.uploaded.textContent = row.upload_date
     ? new Date(row.upload_date).toLocaleString()
+    : '—';
+  els.modified.textContent = row.updated_at
+    ? new Date(row.updated_at).toLocaleString()
     : '—';
   els.uploader.textContent = row.profiles?.email ?? '—';
   els.type.textContent     = row.file_type ?? '—';
