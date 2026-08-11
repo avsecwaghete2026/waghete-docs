@@ -299,34 +299,15 @@ export async function deleteUserViaEdgeFn({ userId }) {
   return data;
 }
 
-// ============================================================
-// password reset (Supabase Auth recovery link)
-// ============================================================
-// 1. requestRecoveryCode(email) — calls resetPasswordForEmail, which
-//    sends the "Reset Password" email template with a link pointing at
-//    <Site URL>/<redirectTo>. Clicking the link lands the user on this
-//    app with #access_token in the URL hash (PKCE flow).
-// 2. The reset-password page reads that hash on load, calls setSession
-//    to establish the recovery session, then shows the new-password
-//    form. updateOwnPassword() uses that session to write the new
-//    password, then we sign out and redirect to login.
-//
-// IMPORTANT: the Supabase project's Site URL (Authentication → URL
-// Configuration) must be set to https://waghete-docs.pages.dev,
-// otherwise the email's link points at localhost:3000 and silently
-// breaks. The redirectTo below is honored when set, but the Site URL
-// is the source of truth for email templates.
-
-export async function requestRecoveryCode(email) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password.html`,
+export async function resetUserPasswordViaEdgeFn({ userId, newPassword }) {
+  const jwt = await getJwt();
+  if (!jwt) throw new Error('Not signed in.');
+  const { data, error } = await supabase.functions.invoke('reset-user-password', {
+    body: { user_id: userId, new_password: newPassword },
+    headers: { Authorization: `Bearer ${jwt}` },
   });
   if (error) throw error;
-}
-
-export async function updateOwnPassword(newPassword) {
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
+  return data;
 }
 
 // ============================================================

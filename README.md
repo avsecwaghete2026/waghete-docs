@@ -1,5 +1,5 @@
 # Document Search
- 
+
 Internal company document search. Static frontend on **Cloudflare Pages**,
 data + auth + files on **Supabase** (Postgres, Auth, Storage). No custom
 backend, no Workers, no D1, no R2 — the browser talks directly to Supabase.
@@ -10,7 +10,6 @@ backend, no Workers, no D1, no R2 — the browser talks directly to Supabase.
 docsearch-app/
 ├── frontend/                Static site deployed to Cloudflare Pages
 │   ├── login.html           Sign-in page
-│   ├── reset-password.html  Forgot-password (code → new password → login)
 │   ├── index.html           App shell (Library sidebar + Admin tab)
 │   ├── css/styles.css
 │   ├── js/
@@ -21,7 +20,6 @@ docsearch-app/
 │   │   ├── search.js                  Live search (debounce, AbortController)
 │   │   ├── admin.js                   Upload / edit / categories / users
 │   │   ├── detail.js                  Document detail modal + preview
-│   │   ├── reset-password.js          Forgot-password flow
 │   │   ├── app.js                     Shell + sidebar toggle + bootstrap
 │   │   └── login.js                   Sign-in form
 │   └── build-config.js                Substitutes env vars into a runtime config
@@ -36,8 +34,9 @@ docsearch-app/
     │   ├── 0007_soft_delete.sql       deleted_at on documents
     │   └── 0008_updated_at.sql        updated_at + trigger for documents
     ├── functions/
-    │   ├── create-user/    Edge Function for admin user creation
-    │   └── delete-user/    Edge Function for admin user removal
+    │   ├── create-user/           Edge Function for admin user creation
+    │   ├── delete-user/           Edge Function for admin user removal
+    │   └── reset-user-password/  Edge Function for admin password reset
     └── scripts/seed-admin.ts          Bootstrap the first admin
 ```
 
@@ -78,13 +77,15 @@ The policies in `0005_storage.sql` apply automatically once the bucket
 exists; the file also documents an INSERT you can run to create the
 bucket via SQL if you prefer.
 
-### 4. Deploy the Edge Function
+### 4. Deploy the Edge Functions
 
 ```sh
 supabase functions deploy create-user --no-verify-jwt
+supabase functions deploy delete-user --no-verify-jwt
+supabase functions deploy reset-user-password --no-verify-jwt
 ```
 
-The function reads `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+The functions read `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` from the Edge Function runtime — the
 service_role key is auto-injected by Supabase when you deploy, so you
 don't need to set it yourself.
@@ -131,45 +132,7 @@ Dashboard → **Authentication → URL Configuration**:
 - **Redirect URLs**: add the same domain (and `http://localhost:8080` if
   you serve locally for testing).
 
-This stops the dreaded "redirect URL not allowed" error after sign-in
-AND makes sure the password-recovery email links point at the deployed
-app instead of `localhost:3000`. If your Site URL is left as a local
-address, the magic link in the recovery email will fail to land on a
-working page.
-
-### 8. Connect Resend for transactional email (recommended)
-
-Supabase's built-in email sender has low rate limits (2–4 emails/hour)
-and often lands in spam. Resend gives you 3,000 free emails/month with
-proper deliverability. Here's how to wire it up.
-
-#### In the Supabase dashboard
-
-1. Go to **Authentication → Providers → Email**.
-2. Enable **Custom SMTP**.
-3. Fill in the fields:
-   - **SMTP Host**: `smtp.resend.com`
-   - **SMTP Port**: `465`
-   - **SMTP User**: your Resend API key (format: `re_xxxx`)
-   - **SMTP Password**: your Resend API key (same value)
-   - **Sender Email**: your verified sending domain (e.g. `noreply@yourdomain.com`)
-   - **Sender Name**: `Waghete Docs` (or your preferred name)
-4. Save.
-
-#### In Resend
-
-1. Create an account at [resend.com](https://resend.com).
-2. Add and verify a domain (Resend → **Domains** → Add). You need access
-   to the domain's DNS to add the TXT/MX/SPF records. Without domain
-   verification, Resend only lets you send to the account owner's email.
-3. Once verified, go to **API Keys** and create a key with "Sending"
-   permissions. Copy it.
-4. Paste the API key into the Supabase SMTP fields above.
-
-That's it — Supabase now sends all auth emails (sign-in confirmations,
-password recovery, email change confirmations) through Resend. The rate
-limit jumps to 3,000 emails/month and delivery rates are much better
-than the default.
+This stops the dreaded "redirect URL not allowed" error after sign-in.
 
 ## Local dev
 
@@ -188,8 +151,8 @@ flow works locally.
 
 Two roles, stored in `profiles.role`:
 
-- **admin** — can upload, edit, delete, and create users. (Sees the
-  Admin tab.)
+- **admin** — can upload, edit, delete, and create users, and reset any
+  user's password. (Sees the Admin tab.)
 - **viewer** — search / view / download only.
 
 A user can never escalate themselves: the only path to `admin` is the
@@ -229,6 +192,7 @@ hold the service_role key server-side.
   the seed script and Edge Function).
 - Audit log of downloads.
 - Per-document ACLs.
+- Forgot password (admins reset user passwords manually from the Users table).
 
 ## Useful commands
 
@@ -244,6 +208,8 @@ supabase functions logs create-user
 supabase functions logs drive-upload
 supabase functions logs drive-download
 supabase functions logs drive-delete
+supabase functions logs delete-user
+supabase functions logs reset-user-password
 ```
 
 ---
@@ -339,8 +305,4 @@ the now-unused `storage_path` column and adds `drive_file_id`.
 | Storage | 15 GB (your personal Drive) |
 | Max upload | 25 MB (server-side cap) |
 | API rate limit | ~12,000 req/min/user — plenty for an internal tool |
-| Files per Drive folder | No documented limit |#   w a g h e t e - d o c s 
- 
- #   w a g h e t e - d o c s 
- 
- 
+| Files per Drive folder | No documented limit |

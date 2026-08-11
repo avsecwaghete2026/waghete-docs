@@ -10,6 +10,7 @@ import {
   listUsers,
   createUserViaEdgeFn,
   deleteUserViaEdgeFn,
+  resetUserPasswordViaEdgeFn,
   parseTags,
 } from './api.js';
 import { getSession } from './auth.js';
@@ -67,8 +68,10 @@ export async function initAdmin() {
   els.editForm.addEventListener('submit', onEdit);
   els.userForm.addEventListener('submit', onCreateUser);
   els.usersBody.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('button[data-action="remove-user"]');
-    if (btn && !btn.disabled) onRemoveUser(btn);
+    const removeBtn = ev.target.closest('button[data-action="remove-user"]');
+    if (removeBtn && !removeBtn.disabled) onRemoveUser(removeBtn);
+    const resetBtn = ev.target.closest('button[data-action="reset-password"]');
+    if (resetBtn && !resetBtn.disabled) onResetPassword(resetBtn);
   });
 
   window.addEventListener('docsearch:edit', (ev) => {
@@ -358,6 +361,10 @@ async function renderUserList() {
         <td><span class="badge ${u.role}">${u.role}</span></td>
         <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</td>
         <td class="actions">
+          <button type="button" class="icon-btn" data-action="reset-password" ${isSelf ? 'disabled title="Reset your own password from your profile page"' : ''}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Reset
+          </button>
           <button type="button" class="icon-btn danger" data-action="remove-user" ${isSelf ? 'disabled title="You cannot remove your own account"' : ''}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             Remove
@@ -386,6 +393,32 @@ async function onRemoveUser(btn) {
     showToast(`User "${email}" removed.`, 'success');
   } catch (e) {
     showToast(`Remove failed: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
+async function onResetPassword(btn) {
+  const tr = btn.closest('tr[data-user-id]');
+  const userId = tr?.dataset.userId;
+  if (!userId) return;
+  const email = tr.querySelector('.title-cell').textContent.replace(/\s*\(you\)\s*$/, '').trim();
+
+  const newPassword = prompt(`Enter a new password for "${email}":\n\nMinimum 8 characters.`);
+  if (newPassword === null) return;
+  if (newPassword.length < 8) {
+    showToast('Password must be at least 8 characters.', 'error');
+    return;
+  }
+
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `${SPINNER_SVG}Saving…`;
+  try {
+    await resetUserPasswordViaEdgeFn({ userId, newPassword });
+    showToast(`Password for "${email}" has been reset.`, 'success');
+  } catch (e) {
+    showToast(`Reset failed: ${e.message}`, 'error');
     btn.disabled = false;
     btn.innerHTML = origHtml;
   }
