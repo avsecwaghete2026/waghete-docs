@@ -103,7 +103,16 @@ function initCatSelector(selector, hiddenInput) {
     }
   });
 
-  // Select a category.
+  // Close on mousedown so the dropdown disappears immediately (before blur
+  // on the trigger fires and defers a close via setTimeout).
+  options.addEventListener('mousedown', (ev) => {
+    const opt = ev.target.closest('[data-cat-id]');
+    if (!opt) return;
+    ev.preventDefault();
+    closeAllDropdowns();
+  });
+
+  // Select a category — runs after mousedown, now just syncs the values.
   dropdown.addEventListener('click', (ev) => {
     const opt = ev.target.closest('[data-cat-id]');
     if (!opt) return;
@@ -111,7 +120,6 @@ function initCatSelector(selector, hiddenInput) {
     const name = opt.dataset.catName;
     hiddenInput.value = id;
     label.textContent = name || '—';
-    closeAllDropdowns();
   });
 
   // Delete a category.

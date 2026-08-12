@@ -155,7 +155,7 @@ main {
   overflow: hidden;
   padding-left: 44px; /* room for the floating hamburger that overlays the brand row */
 }
-.nav-logo { height: 32px; width: auto; display: block; flex-shrink: 0; }
+.nav-logo { height: 32px; width: auto; display: block; flex-shrink: 0; border-radius: var(--radius-md); }
 
 /* Floating hamburger — fixed in the top-left of the viewport, ALWAYS
    visible (even when the sidebar is hidden). Clicking it toggles the
@@ -386,6 +386,8 @@ main {
   height: auto;
   display: block;
   margin: 0 auto 1rem;
+  border-radius: var(--radius-md);
+}
 }
 .auth-card h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
 .auth-card > .muted { margin-top: -0.25rem; margin-bottom: 1.25rem; }
