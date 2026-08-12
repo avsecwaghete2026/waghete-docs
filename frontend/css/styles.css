@@ -773,7 +773,7 @@ tr.doc-row:hover .title-link { color: var(--c-primary); }
   background: transparent;
   cursor: pointer;
   color: var(--c-text-muted);
-  padding: 2px;
+  padding: 1px 2px;
   border-radius: 3px;
   display: flex;
   align-items: center;

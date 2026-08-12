@@ -105,7 +105,9 @@ function initCatSelector(selector, hiddenInput) {
 
   // Close on mousedown so the dropdown disappears immediately (before blur
   // on the trigger fires and defers a close via setTimeout).
+  // Skip if the click landed on a delete button — let the delete handler run.
   options.addEventListener('mousedown', (ev) => {
+    if (ev.target.closest('[data-delete-cat]')) return;
     const opt = ev.target.closest('[data-cat-id]');
     if (!opt) return;
     ev.preventDefault();
@@ -195,7 +197,7 @@ function initCatSelector(selector, hiddenInput) {
           <div class="cat-option" data-cat-id="${escAttr(c.id)}" data-cat-name="${escAttr(c.name)}" role="option" tabindex="-1">
             <span>${escHtml(c.name)}</span>
             <button type="button" class="cat-del-btn" data-delete-cat="${escAttr(c.id)}" title="Delete category" tabindex="-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
         `).join('')
