@@ -29,6 +29,7 @@ export async function initAdmin() {
     uploadCatSel:  document.getElementById('upload-cat-selector'),
     uploadCatHidden: document.getElementById('upload-category'),
     uploadTags:    document.getElementById('upload-tags'),
+    uploadConfidential: document.getElementById('upload-confidential'),
     uploadError:   document.getElementById('upload-error'),
 
     // Edit modal
@@ -39,6 +40,7 @@ export async function initAdmin() {
     editCatSel:    document.getElementById('edit-cat-selector'),
     editCatHidden: document.getElementById('edit-category'),
     editTags:      document.getElementById('edit-tags'),
+    editConfidential: document.getElementById('edit-confidential'),
     editFile:      document.getElementById('edit-file'),
     editError:     document.getElementById('edit-error'),
 
@@ -233,7 +235,7 @@ async function openEditModal(id) {
   try {
     const { data, error } = await supabase
       .from('documents')
-      .select('id, title, category_id, tags')
+      .select('id, title, category_id, tags, is_confidential')
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -243,6 +245,7 @@ async function openEditModal(id) {
     els.editCatHidden.value = data.category_id ?? '';
     els.editTags.value     = (data.tags ?? []).join(', ');
     els.editFile.value     = '';
+    els.editConfidential.checked = !!data.is_confidential;
     showError(els.editError, '');
 
     // Sync trigger label.
@@ -266,6 +269,7 @@ function closeEditModal() {
   els.editModal.hidden = true;
   els.editModal.setAttribute('aria-hidden', 'true');
   els.editForm.reset();
+  els.editConfidential.checked = false;
   showError(els.editError, '');
 }
 
@@ -281,6 +285,7 @@ async function onUpload(ev) {
   const title = els.uploadTitle.value.trim();
   const categoryId = els.uploadCatHidden.value;
   const tags = parseTags(els.uploadTags.value);
+  const isConfidential = els.uploadConfidential.checked;
 
   if (!file) return showError(els.uploadError, 'Choose a file.');
   if (!title) return showError(els.uploadError, 'Title is required.');
@@ -296,7 +301,7 @@ async function onUpload(ev) {
   setBtnLoading(submit, 'Uploading…');
   try {
     const session = await getSession();
-    await uploadDocument({ file, title, categoryId: categoryId || null, tags, uploaderId: session.user.id });
+    await uploadDocument({ file, title, categoryId: categoryId || null, tags, isConfidential, uploaderId: session.user.id });
     els.uploadForm.reset();
     els.uploadCatSel.querySelector('.cat-trigger-label').textContent = '—';
     window.dispatchEvent(new CustomEvent('docsearch:refresh'));
@@ -321,6 +326,7 @@ async function onEdit(ev) {
   const categoryId = els.editCatHidden.value;
   const tags = parseTags(els.editTags.value);
   const file = els.editFile.files[0] || null;
+  const isConfidential = els.editConfidential.checked;
 
   if (!title) return showError(els.editError, 'Title is required.');
   if (file && file.size > MAX_FILE_BYTES) {
@@ -337,6 +343,7 @@ async function onEdit(ev) {
     const session = await getSession();
     await updateDocument({
       id, title, categoryId: categoryId || null, tags, file,
+      isConfidential,
       uploaderId: session.user.id,
     });
     closeEditModal();

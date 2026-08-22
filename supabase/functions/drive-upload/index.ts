@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
   const title = (form.get('title') as string | null)?.trim() ?? '';
   const categoryId = (form.get('category_id') as string | null) ?? '';
   const tagsRaw = (form.get('tags') as string | null) ?? '';
+  const isConfidentialRaw = (form.get('is_confidential') as string | null) ?? '';
   // When replacing the file on an existing row, the frontend passes the
   // row's id so we update in place instead of inserting a duplicate.
   const documentId = (form.get('document_id') as string | null)?.trim() ?? '';
@@ -57,6 +58,8 @@ Deno.serve(async (req) => {
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
+
+  const isConfidential = isConfidentialRaw === 'true';
 
   // 1. Upload to Drive.
   const arrayBuf = await file.arrayBuffer();
@@ -102,6 +105,7 @@ Deno.serve(async (req) => {
         drive_file_id: driveFileId,
         file_type: file.type || null,
         file_size: file.size,
+        is_confidential: isConfidential,
       })
       .eq('id', documentId)
       .select()
@@ -139,6 +143,7 @@ Deno.serve(async (req) => {
         drive_file_id: driveFileId,
         file_type: file.type || null,
         file_size: file.size,
+        is_confidential: isConfidential,
       })
       .select()
       .single();

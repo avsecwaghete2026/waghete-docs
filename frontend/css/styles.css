@@ -359,6 +359,31 @@ main {
 }
 .badge.admin  { background: var(--c-admin-bg);  color: var(--c-admin-fg); }
 .badge.viewer { background: var(--c-viewer-bg); color: var(--c-viewer-fg); }
+.badge.confidential { background: #7c3aed; color: #fff; }
+
+/* Checkbox toggle — inline with label text */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--c-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle-label span {
+  text-transform: uppercase;
+}
 
 /* =====================================================================
    Auth (login / reset-password pages)

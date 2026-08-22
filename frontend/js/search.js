@@ -111,7 +111,10 @@ function renderResults(rows) {
   const admin = isAdmin();
   els.body.innerHTML = rows.map((r) => `
     <tr data-id="${r.id}" class="doc-row">
-      <td class="title-cell" data-label="Title"><span class="title-link">${escapeHtml(r.title)}</span></td>
+      <td class="title-cell" data-label="Title">
+        <span class="title-link">${escapeHtml(r.title)}</span>
+        ${admin && r.is_confidential ? '<span class="badge confidential">Confidential</span>' : ''}
+      </td>
       <td data-label="Category">${r.categories?.name ? `<span class="category-chip">${escapeHtml(r.categories.name)}</span>` : '<span class="muted">—</span>'}</td>
       <td data-label="Tags">${(r.tags ?? []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="muted">—</span>'}</td>
       <td data-label="Uploaded">${formatDate(r.upload_date)}</td>

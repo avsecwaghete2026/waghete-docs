@@ -60,11 +60,14 @@ create policy "categories admin write"
 -- ============================================================
 -- documents policies
 -- ============================================================
--- Any authenticated user can SELECT.
+-- Admins see all documents; non-admins only see non-confidential ones.
 create policy "documents read"
   on public.documents for select
   to authenticated
-  using (true);
+  using (
+    public.is_admin()
+    or not coalesce(is_confidential, false)
+  );
 
 -- Only admins can INSERT.
 create policy "documents admin insert"

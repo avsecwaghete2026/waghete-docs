@@ -53,7 +53,7 @@ export async function searchDocuments({
   let query = supabase
     .from('documents')
     .select(
-      'id, title, category_id, tags, uploaded_by, upload_date, updated_at, drive_file_id, file_type, file_size, deleted_at, ' +
+      'id, title, category_id, tags, uploaded_by, upload_date, updated_at, drive_file_id, file_type, file_size, deleted_at, is_confidential, ' +
       'categories(name), profiles!documents_uploaded_by_fkey(email)',
     )
     .is('deleted_at', null)
@@ -122,7 +122,7 @@ export async function downloadAsBlob(driveFileId) {
 // documents — upload (admin only)
 // ============================================================
 
-export async function uploadDocument({ file, title, categoryId, tags }) {
+export async function uploadDocument({ file, title, categoryId, tags, isConfidential }) {
   if (file.size > MAX_FILE_BYTES) {
     throw new Error(`File too large (max ${MAX_FILE_BYTES / (1024 * 1024)} MB).`);
   }
@@ -132,6 +132,7 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
   form.append('title', title);
   if (categoryId) form.append('category_id', categoryId);
   form.append('tags', (tags ?? []).join(','));
+  form.append('is_confidential', isConfidential ? 'true' : 'false');
 
   const jwt = await getJwt();
   const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-upload`, {
@@ -153,7 +154,7 @@ export async function uploadDocument({ file, title, categoryId, tags }) {
 // documents — update (admin only)
 // ============================================================
 
-export async function updateDocument({ id, title, categoryId, tags, file }) {
+export async function updateDocument({ id, title, categoryId, tags, file, isConfidential }) {
   if (file) {
     if (file.size > MAX_FILE_BYTES) {
       throw new Error('Replacement file too large.');
@@ -175,6 +176,7 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
     if (categoryId) form.append('category_id', categoryId);
     form.append('tags', (tags ?? []).join(','));
     form.append('document_id', id);
+    form.append('is_confidential', isConfidential ? 'true' : 'false');
 
     const jwt = await getJwt();
     const upRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/drive-upload`, {
@@ -207,7 +209,7 @@ export async function updateDocument({ id, title, categoryId, tags, file }) {
   // No new file — update metadata only.
   const { data, error } = await supabase
     .from('documents')
-    .update({ title, category_id: categoryId || null, tags })
+    .update({ title, category_id: categoryId || null, tags, is_confidential: isConfidential })
     .eq('id', id)
     .select()
     .single();
