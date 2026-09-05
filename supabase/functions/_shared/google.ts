@@ -72,6 +72,13 @@ export async function getAccessToken(): Promise<string> {
 
 // ----- Drive API helpers --------------------------------------------------
 
+// Legacy small-file path: metadata + base64-encoded bytes in a single
+// request. Google only documents this ("multipart" uploadType) as
+// reliable up to ~5MB, and it requires the whole file to exist in
+// memory (plus a ~33% larger base64 copy of it) before anything is
+// sent. No longer used by drive-upload — kept in case anything else
+// in this project still calls it for small files. Prefer
+// uploadToDriveResumable for anything user-uploaded.
 export async function uploadToDrive(
   bytes: Uint8Array,
   metadata: { name: string; mimeType: string },
@@ -79,8 +86,6 @@ export async function uploadToDrive(
   const accessToken = await getAccessToken();
   const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID');
 
-  // Multipart upload: metadata + bytes in one request. Using the simple
-  // upload path (not resumable) because our files cap at 25 MB.
   const boundary = '-------docsearch' + crypto.randomUUID();
   const delimiter = `\r\n--${boundary}\r\n`;
   const closeDelim = `\r\n--${boundary}--`;
@@ -113,6 +118,70 @@ export async function uploadToDrive(
   }
   const json = await res.json();
   return json.id as string;
+}
+
+// Streaming path for anything that isn't tiny (which in practice means
+// "everything the app lets a user upload"). Two requests:
+//   1. POST metadata only → Drive replies with a one-time session URL
+//      in the `Location` header.
+//   2. PUT the raw bytes to that session URL. Since we already know
+//      the total size, this can complete in a single request — no
+//      manual chunking or 308-polling needed, and Drive never sees
+//      more than the declared Content-Length.
+// Crucially, `stream` is piped straight into the outgoing request
+// rather than being read into a buffer first, so this function's own
+// memory use stays roughly constant regardless of file size.
+export async function uploadToDriveResumable(
+  stream: ReadableStream<Uint8Array>,
+  metadata: { name: string; mimeType: string; size: number },
+): Promise<string> {
+  const accessToken = await getAccessToken();
+  const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID');
+
+  // Step 1: open the resumable session.
+  const initRes = await fetch(`${DRIVE_UPLOAD_URL}?uploadType=resumable&fields=id`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': metadata.mimeType,
+      'X-Upload-Content-Length': String(metadata.size),
+    },
+    body: JSON.stringify({
+      name: metadata.name,
+      mimeType: metadata.mimeType,
+      ...(folderId ? { parents: [folderId] } : {}),
+    }),
+  });
+  if (!initRes.ok) {
+    const text = await initRes.text();
+    throw new Error(`Drive resumable session init failed (${initRes.status}): ${text}`);
+  }
+  const sessionUrl = initRes.headers.get('Location');
+  if (!sessionUrl) {
+    throw new Error('Drive resumable session init did not return a Location header.');
+  }
+
+  // Step 2: stream the bytes. `duplex: 'half'` is required by the Fetch
+  // spec whenever the request body is a stream (so the runtime knows
+  // not to buffer it before sending) — Deno's TS lib definitions
+  // haven't caught up with this part of the spec yet, hence the cast.
+  const uploadRes = await fetch(sessionUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': metadata.mimeType,
+      'Content-Length': String(metadata.size),
+    },
+    body: stream,
+    duplex: 'half',
+  } as RequestInit & { duplex: string });
+
+  if (!uploadRes.ok) {
+    const text = await uploadRes.text();
+    throw new Error(`Drive upload failed (${uploadRes.status}): ${text}`);
+  }
+  const resultJson = await uploadRes.json();
+  return resultJson.id as string;
 }
 
 export async function downloadFromDrive(fileId: string): Promise<{
