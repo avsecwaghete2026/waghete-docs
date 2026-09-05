@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -7,7 +8,11 @@
   <!-- Hide the shell until app.js confirms a valid session. This stops
        the brief flash of the main screen before the async auth check
        redirects to login. -->
-  <style>html.preauth .app-shell { visibility: hidden; }</style>
+  <style>
+    html.preauth .app-shell {
+      visibility: hidden;
+    }
+  </style>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="js/config.runtime.js"></script>
   <!-- Synchronous pre-auth check. Runs before the body parses so an
@@ -36,231 +41,319 @@
     })();
   </script>
 </head>
+
 <body>
   <div class="app-shell">
-  <!-- The hamburger toggle lives OUTSIDE the sidebar so it stays
+    <!-- The hamburger toggle lives OUTSIDE the sidebar so it stays
        visible when the sidebar is fully hidden. -->
-  <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
+    <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
 
-  <!-- ============================================================
-       Sidebar — logo + nav (Library / Admin) + user block at bottom.
+    <!-- ============================================================
+       Sidebar — logo + nav (Library / Upload / Accounts) + user block.
        Hidden by default; toggled by the hamburger button.
        ============================================================ -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-top">
-      <div class="sidebar-brand">
-        <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
-      </div>
-    </div>
-
-    <nav class="sidebar-nav" id="tabs">
-      <button type="button" class="tab active" data-view="search" title="Library">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <span class="tab-label">Library</span>
-      </button>
-      <button type="button" class="tab" data-view="admin" id="admin-tab" style="display:none" title="Admin">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span class="tab-label">Admin</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-user">
-      <div class="sidebar-user-info">
-        <img class="user-avatar" id="user-avatar" src="" alt="" hidden />
-        <div class="sidebar-user-text">
-          <span id="user-email" class="sidebar-user-email"></span>
-          <span id="user-role" class="badge"></span>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-brand">
+          <img class="nav-logo" src="images/waghete-logo.png" alt="Waghete" />
         </div>
       </div>
-      <button id="logout-btn" type="button" class="sidebar-logout" aria-label="Sign out">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span class="tab-label">Sign out</span>
-      </button>
-    </div>
-  </aside>
 
-  <main>
-    <!-- ============================================================
+      <nav class="sidebar-nav" id="tabs">
+        <button type="button" class="tab active" data-view="search" title="Library">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span class="tab-label">Library</span>
+        </button>
+        <button type="button" class="tab" data-view="admin-upload" id="upload-tab" style="display:none" title="Upload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span class="tab-label">Upload</span>
+        </button>
+        <button type="button" class="tab" data-view="admin-users" id="users-tab" style="display:none" title="Accounts">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span class="tab-label">Accounts</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="sidebar-user-info">
+          <img class="user-avatar" id="user-avatar" src="" alt="" hidden />
+          <div class="sidebar-user-text">
+            <span id="user-email" class="sidebar-user-email"></span>
+            <span id="user-role" class="badge"></span>
+          </div>
+        </div>
+        <button id="logout-btn" type="button" class="sidebar-logout" aria-label="Sign out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span class="tab-label">Sign out</span>
+        </button>
+      </div>
+    </aside>
+
+    <main>
+      <!-- ============================================================
          LIBRARY VIEW (default; visible to all roles)
          ============================================================ -->
-    <section id="view-search" class="view active">
-      <div class="view-header">
-        <h1>Library</h1>
-        <p class="muted">Search and download company documents.</p>
-      </div>
+      <section id="view-search" class="view active">
+        <div class="view-header">
+          <h1>Library</h1>
+          <p class="muted">Search and download company documents.</p>
+        </div>
 
-      <div class="search-bar">
-        <label for="search-q">Search<input id="search-q" type="search" placeholder="Search documents…" autocomplete="off" /></label>
-        <label for="search-category">Category<select id="search-category"><option value="">All categories</option></select></label>
-        <label for="search-tag">Tags<input id="search-tag" type="text" placeholder="Tag (comma-separated, AND-match)" /></label>
-        <label for="search-date-from">From<input id="search-date-from" type="date" /></label>
-        <label for="search-date-to">To<input id="search-date-to" type="date" /></label>
-        <label for="search-sort">Sort by
-          <select id="search-sort">
-            <optgroup label="Date modified">
-              <option value="updated_desc" selected>Newest first</option>
-              <option value="updated_asc">Oldest first</option>
-            </optgroup>
-            <optgroup label="Date uploaded">
-              <option value="uploaded_desc">Newest first</option>
-              <option value="uploaded_asc">Oldest first</option>
-            </optgroup>
-            <optgroup label="Name">
-              <option value="name_asc">A → Z</option>
-              <option value="name_desc">Z → A</option>
-            </optgroup>
-            <optgroup label="Type">
-              <option value="type_asc">File type</option>
-            </optgroup>
-            <optgroup label="Size">
-              <option value="size_desc">Largest first</option>
-              <option value="size_asc">Smallest first</option>
-            </optgroup>
-          </select>
-        </label>
-      </div>
+        <div class="search-bar">
+          <label for="search-q">Search<input id="search-q" type="search" placeholder="Search documents…"
+              autocomplete="off" /></label>
+          <label for="search-category">Category<select id="search-category">
+              <option value="">All categories</option>
+            </select></label>
+          <label for="search-tag">Tags<input id="search-tag" type="text"
+              placeholder="Tag (comma-separated, AND-match)" /></label>
+          <label for="search-date-from">From<input id="search-date-from" type="date" /></label>
+          <label for="search-date-to">To<input id="search-date-to" type="date" /></label>
+          <label for="search-sort">Sort by
+            <select id="search-sort">
+              <optgroup label="Date modified">
+                <option value="updated_desc" selected>Newest first</option>
+                <option value="updated_asc">Oldest first</option>
+              </optgroup>
+              <optgroup label="Date uploaded">
+                <option value="uploaded_desc">Newest first</option>
+                <option value="uploaded_asc">Oldest first</option>
+              </optgroup>
+              <optgroup label="Name">
+                <option value="name_asc">A → Z</option>
+                <option value="name_desc">Z → A</option>
+              </optgroup>
+              <optgroup label="Type">
+                <option value="type_asc">File type</option>
+              </optgroup>
+              <optgroup label="Size">
+                <option value="size_desc">Largest first</option>
+                <option value="size_asc">Smallest first</option>
+              </optgroup>
+            </select>
+          </label>
+        </div>
 
-      <div class="results-meta">
-        <span id="results-count" class="muted"></span>
-        <span id="results-loading" class="loading" hidden>Searching…</span>
-      </div>
+        <div class="results-meta">
+          <span id="results-count" class="muted"></span>
+          <span id="results-loading" class="loading" hidden>Searching…</span>
+        </div>
 
-      <table class="results">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Tags</th>
-            <th>Uploaded</th>
-            <th>Modified</th>
-            <th>By</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="results-body">
-          <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⌕</div>Type to search.</div></td></tr>
-        </tbody>
-      </table>
-    </section>
+        <table class="results">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Tags</th>
+              <th>Uploaded</th>
+              <th>Modified</th>
+              <th>By</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-state-icon">⌕</div>Type to search.
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-    <!-- ============================================================
+      <!-- ============================================================
          DETAIL MODAL (overlay; opens when a row is clicked)
          ============================================================ -->
-    <div id="detail-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
-      <div class="modal-backdrop" data-close></div>
-      <div class="modal-panel">
-        <button type="button" class="modal-close" data-close aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <aside class="detail-sidebar">
-          <div class="detail-sidebar-inner">
-            <h2 id="detail-title" class="detail-title">—</h2>
-            <dl class="detail-meta">
-              <dt>Category</dt>     <dd id="detail-category">—</dd>
-              <dt>Tags</dt>         <dd id="detail-tags">—</dd>
-              <dt>Uploaded</dt>     <dd id="detail-uploaded">—</dd>
-              <dt>Modified</dt>     <dd id="detail-modified">—</dd>
-              <dt>By</dt>           <dd id="detail-uploader">—</dd>
-              <dt>Type</dt>         <dd id="detail-type">—</dd>
-              <dt>Size</dt>         <dd id="detail-size">—</dd>
-            </dl>
-            <div class="detail-actions">
-              <button type="button" id="detail-download" class="icon-btn primary">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download
-              </button>
-              <button type="button" id="detail-edit" class="icon-btn" style="display:none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Edit
-              </button>
-              <button type="button" id="detail-delete" class="icon-btn danger" style="display:none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                Delete
-              </button>
-            </div>
-          </div>
-        </aside>
-        <section class="detail-preview">
-          <div id="detail-preview-host" class="preview-host"></div>
-        </section>
-      </div>
-    </div>
-
-    <!-- ============================================================
-         EDIT MODAL (overlay; pre-filled when opened from detail)
-         ============================================================ -->
-    <div id="edit-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
-      <div class="modal-backdrop" data-close></div>
-      <div class="modal-panel modal-panel-edit">
-        <button type="button" class="modal-close" data-close aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <h2 class="edit-modal-title">Edit document</h2>
-
-        <form id="edit-form">
-          <input type="hidden" id="edit-id" />
-
-          <label>Title<input type="text" id="edit-title" required /></label>
-
-          <label>Category
-            <div class="cat-selector" id="edit-cat-selector">
-              <button type="button" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">
-                <span class="cat-trigger-label">—</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="cat-dropdown" role="listbox" hidden>
-                <div class="cat-options"></div>
-                <div class="cat-add-row">
-                  <button type="button" class="cat-add-btn">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New category
-                  </button>
-                  <input type="text" class="cat-add-input" placeholder="Category name" hidden />
-                </div>
+      <div id="detail-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" data-close></div>
+        <div class="modal-panel">
+          <button type="button" class="modal-close" data-close aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <aside class="detail-sidebar">
+            <div class="detail-sidebar-inner">
+              <h2 id="detail-title" class="detail-title">—</h2>
+              <dl class="detail-meta">
+                <dt>Category</dt>
+                <dd id="detail-category">—</dd>
+                <dt>Tags</dt>
+                <dd id="detail-tags">—</dd>
+                <dt>Uploaded</dt>
+                <dd id="detail-uploaded">—</dd>
+                <dt>Modified</dt>
+                <dd id="detail-modified">—</dd>
+                <dt>By</dt>
+                <dd id="detail-uploader">—</dd>
+                <dt>Type</dt>
+                <dd id="detail-type">—</dd>
+                <dt>Size</dt>
+                <dd id="detail-size">—</dd>
+              </dl>
+              <div class="detail-actions">
+                <button type="button" id="detail-download" class="icon-btn primary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Download
+                </button>
+                <button type="button" id="detail-edit" class="icon-btn" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  Edit
+                </button>
+                <button type="button" id="detail-delete" class="icon-btn danger" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                  Delete
+                </button>
               </div>
             </div>
-            <input type="hidden" id="edit-category" value="" />
-          </label>
-
-          <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
-
-          <label class="toggle-label">
-            <input type="checkbox" id="edit-confidential" />
-            <span>Confidential</span>
-          </label>
-
-          <label>Replace file (optional)<input type="file" id="edit-file" /></label>
-
-          <div class="edit-modal-actions">
-            <button type="submit" class="icon-btn primary">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Save changes
-            </button>
-            <button type="button" class="icon-btn" data-close>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Cancel
-            </button>
-            <p id="edit-error" class="error" hidden></p>
-          </div>
-        </form>
+          </aside>
+          <section class="detail-preview">
+            <div id="detail-preview-host" class="preview-host"></div>
+          </section>
+        </div>
       </div>
-    </div>
 
-    <!-- ============================================================
-         ADMIN VIEW (rendered only when role === 'admin')
+      <!-- ============================================================
+         EDIT MODAL (overlay; pre-filled when opened from detail)
          ============================================================ -->
-    <section id="view-admin" class="view">
-      <div class="view-header">
-        <h1>Admin</h1>
-        <p class="muted">Upload documents and manage users.</p>
+      <div id="edit-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" data-close></div>
+        <div class="modal-panel modal-panel-edit">
+          <button type="button" class="modal-close" data-close aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <h2 class="edit-modal-title">Edit document</h2>
+
+          <form id="edit-form">
+            <input type="hidden" id="edit-id" />
+
+            <label>Title<input type="text" id="edit-title" required /></label>
+
+            <label>Category
+              <div class="cat-selector" id="edit-cat-selector">
+                <button type="button" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="cat-trigger-label">—</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                <div class="cat-dropdown" role="listbox" hidden>
+                  <div class="cat-options"></div>
+                  <div class="cat-add-row">
+                    <button type="button" class="cat-add-btn">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      New category
+                    </button>
+                    <input type="text" class="cat-add-input" placeholder="Category name" hidden />
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="edit-category" value="" />
+            </label>
+
+            <label>Tags (comma-separated)<input type="text" id="edit-tags" /></label>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="edit-confidential" />
+              <span>Confidential</span>
+            </label>
+
+            <label>Replace file (optional)<input type="file" id="edit-file" /></label>
+
+            <div class="edit-modal-actions">
+              <button type="submit" class="icon-btn primary">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Save changes
+              </button>
+              <button type="button" class="icon-btn" data-close>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                Cancel
+              </button>
+              <p id="edit-error" class="error" hidden></p>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <div class="admin-grid">
+      <!-- ============================================================
+         UPLOAD VIEW (rendered only when role === 'admin')
+         ============================================================ -->
+      <section id="view-admin-upload" class="view">
+        <div class="view-header">
+          <h1>Upload</h1>
+          <p class="muted">Upload documents to the library.</p>
+        </div>
+
         <div class="admin-card">
           <h2>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
             Upload document
           </h2>
           <form id="upload-form">
@@ -270,13 +363,19 @@
               <div class="cat-selector" id="upload-cat-selector">
                 <button type="button" class="cat-trigger" aria-haspopup="listbox" aria-expanded="false">
                   <span class="cat-trigger-label">—</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
                 </button>
                 <div class="cat-dropdown" role="listbox" hidden>
                   <div class="cat-options"></div>
                   <div class="cat-add-row">
                     <button type="button" class="cat-add-btn">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
                       New category
                     </button>
                     <input type="text" class="cat-add-input" placeholder="Category name" hidden />
@@ -291,16 +390,37 @@
               <span>Confidential</span>
             </label>
             <button type="submit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
               Upload
             </button>
             <p id="upload-error" class="error" hidden></p>
           </form>
         </div>
+      </section>
+
+      <!-- ============================================================
+         ACCOUNTS VIEW (rendered only when role === 'admin')
+         ============================================================ -->
+      <section id="view-admin-users" class="view">
+        <div class="view-header">
+          <h1>Accounts</h1>
+          <p class="muted">Manage user accounts.</p>
+        </div>
 
         <div class="admin-card">
           <h2>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
             Users
           </h2>
           <form id="user-form">
@@ -313,22 +433,35 @@
               </select>
             </label>
             <button type="submit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
               Create user
             </button>
             <p id="user-error" class="error" hidden></p>
           </form>
           <table class="results">
-            <thead><tr><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody id="users-body"></tbody>
           </table>
         </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
   </div>
 
   <script type="module" src="js/app.js"></script>
   <div id="toast-container" hidden></div>
 </body>
+
 </html>
