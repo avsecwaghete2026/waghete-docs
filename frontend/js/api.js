@@ -20,7 +20,6 @@ async function getJwt() {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token;
 }
-
 function buildUploadParams({
   title,
   categoryId,
@@ -28,14 +27,30 @@ function buildUploadParams({
   isConfidential,
   filename,
   documentId,
+  size,
 }) {
   const params = new URLSearchParams();
+
   params.set("title", title);
-  if (categoryId) params.set("category_id", categoryId);
+
+  if (categoryId) {
+    params.set("category_id", categoryId);
+  }
+
   params.set("tags", (tags ?? []).join(","));
+
   params.set("is_confidential", isConfidential ? "true" : "false");
+
   params.set("filename", filename || title);
-  if (documentId) params.set("document_id", documentId);
+
+  if (size != null) {
+    params.set("size", String(size));
+  }
+
+  if (documentId) {
+    params.set("document_id", documentId);
+  }
+
   return params.toString();
 }
 
@@ -200,6 +215,7 @@ export async function uploadDocument({
     tags,
     isConfidential,
     filename: file.name,
+    size: file.size,
   });
   const { document } = await postFileToDriveUpload(file, params);
   return document;
@@ -239,6 +255,7 @@ export async function updateDocument({
       isConfidential,
       filename: file.name,
       documentId: id,
+      size: file.size,
     });
     const { document: data } = await postFileToDriveUpload(file, params);
 
