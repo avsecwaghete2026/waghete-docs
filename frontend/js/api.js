@@ -45,9 +45,7 @@ async function postFileToDriveUpload(file, params) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${jwt}`,
-      // Set explicitly (rather than left to the browser) since the
-      // body is the raw file, not a FormData object — there's no
-      // boundary for the browser to compute here.
+      apikey: window.__SUPABASE_ANON_KEY__,
       "Content-Type": file.type || "application/octet-stream",
     },
     body: file,
@@ -160,7 +158,12 @@ export async function downloadAsBlob(driveFileId) {
 
   const res = await fetch(
     `${SUPABASE_FUNCTIONS_URL}/drive-download?id=${encodeURIComponent(driveFileId)}`,
-    { headers: { Authorization: `Bearer ${jwt}` } },
+    {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: window.__SUPABASE_ANON_KEY__,
+      },
+    },
   );
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
@@ -285,6 +288,7 @@ export async function deleteDocument(id) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${jwt}`,
+      apikey: window.__SUPABASE_ANON_KEY__,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ id }),
